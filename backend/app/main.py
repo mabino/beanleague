@@ -22,10 +22,16 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing BeanLeague Backend...")
     await init_db()
     
-    # Run initial seed if needed
-    async for db in get_db():
-        await run_daily_seeder(db)
-        break
+    # Run initial seed asynchronously in background so healthchecks pass immediately
+    async def bg_seed():
+        try:
+            async for db in get_db():
+                await run_daily_seeder(db)
+                break
+        except Exception as e:
+            logger.exception(f"Background initial seeder failed: {e}")
+
+    asyncio.create_task(bg_seed())
 
     # Start background scheduler
     start_scheduler()

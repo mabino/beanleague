@@ -124,6 +124,11 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
 
                 await insert_fixture_items(items)
 
+            # If real fixtures were fetched, remove mock placeholder fixtures
+            if used_api:
+                await db.execute("DELETE FROM fixtures WHERE id BETWEEN 1001 AND 1010")
+                await db.commit()
+
             # Fetch live team squads from API-Football for real player directory
             TARGET_TEAMS = [
                 {"id": 529, "name": "Barcelona"},
@@ -240,7 +245,7 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
 
     cursor = await db.execute("SELECT COUNT(*) FROM fixtures")
     fixture_count = (await cursor.fetchone())[0]
-    if fixture_count == 0 or force_mock:
+    if (fixture_count == 0 or force_mock) and not used_api:
         logger.info("Seeding fixtures from mock fixtures dataset...")
         for f in MOCK_FIXTURES:
             await db.execute(
