@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: beanleague-backend
+    restart: unless-stopped
+    environment:
+      - DATA_DIR=/app/data
+      - API_FOOTBALL_KEY=${API_FOOTBALL_KEY:-}
+      - API_DAILY_LIMIT=${API_DAILY_LIMIT:-100}
+      - DEFAULT_SEASON_CODE=${DEFAULT_SEASON_CODE:-BARCA-2026}
+      - ENABLE_SCHEDULER=true
+    volumes:
+      - beanleague_data:/app/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: beanleague-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  beanleague_data:
+    name: beanleague_data

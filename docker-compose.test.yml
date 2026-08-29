@@ -1,0 +1,10 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.test
+    container_name: beanleague-test
+    environment:
+      - DATA_DIR=/app/data
+      - API_DAILY_LIMIT=100
+      - ENABLE_SCHEDULER=false

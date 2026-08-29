@@ -1,0 +1,168 @@
+import React, { useState, useEffect } from 'react';
+import { Trophy, Medal, Users, Eye, Sparkles, RefreshCw } from 'lucide-react';
+import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+
+export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => {
+  const { team: myTeam } = useAuth();
+  const [standings, setStandings] = useState([]);
+  const [leagueInfo, setLeagueInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchStandings = async () => {
+    try {
+      setIsLoading(true);
+      const data = await api.getStandings(seasonCode);
+      setStandings(data.standings);
+      setLeagueInfo(data);
+    } catch (err) {
+      console.error('Failed to load standings:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStandings();
+  }, [seasonCode]);
+
+  const getRankBadge = (rank) => {
+    if (rank === 1) return <span className="text-xl">🥇</span>;
+    if (rank === 2) return <span className="text-xl">🥈</span>;
+    if (rank === 3) return <span className="text-xl">🥉</span>;
+    return (
+      <span className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 font-bold text-xs flex items-center justify-center">
+        {rank}
+      </span>
+    );
+  };
+
+  return (
+    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-md">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/30">
+            <Trophy className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-white tracking-wide">
+              {leagueInfo?.league_name || 'League Standings'}
+            </h2>
+            <p className="text-xs text-slate-400">
+              Season Code: <span className="font-mono text-emerald-400 font-bold">{seasonCode}</span> • Live Matchday Scores
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={fetchStandings}
+          disabled={isLoading}
+          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+          title="Refresh Standings"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {/* Standings Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="text-[11px] text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <th className="pb-3 pl-2 font-bold">Rank</th>
+              <th className="pb-3 font-bold">Team</th>
+              <th className="pb-3 font-bold hidden sm:table-cell">Formation</th>
+              <th className="pb-3 font-bold hidden md:table-cell">Players</th>
+              <th className="pb-3 text-right pr-2 font-bold">Total Points</th>
+              <th className="pb-3 text-right pr-2 font-bold">Scout</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/60">
+            {isLoading && standings.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-slate-500">
+                  <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  Loading live leaderboard...
+                </td>
+              </tr>
+            ) : standings.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-slate-500">
+                  No teams in this league yet. Be the first to create one!
+                </td>
+              </tr>
+            ) : (
+              standings.map((team) => {
+                const isMyTeam = myTeam && myTeam.id === team.team_id;
+                return (
+                  <tr
+                    key={team.team_id}
+                    className={`transition-all duration-200 ${
+                      isMyTeam
+                        ? 'bg-emerald-950/40 hover:bg-emerald-950/60 font-semibold'
+                        : 'hover:bg-slate-800/50'
+                    }`}
+                  >
+                    {/* Rank */}
+                    <td className="py-3 pl-2 flex items-center gap-2">
+                      {getRankBadge(team.rank)}
+                    </td>
+
+                    {/* Team & Manager */}
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-white">
+                          {team.team_name}
+                        </span>
+                        {isMyTeam && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                            YOU
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        PIN: {team.manager_code_masked}
+                      </span>
+                    </td>
+
+                    {/* Formation */}
+                    <td className="py-3 hidden sm:table-cell">
+                      <span className="text-xs px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 font-mono">
+                        {team.formation}
+                      </span>
+                    </td>
+
+                    {/* Squad Count */}
+                    <td className="py-3 text-xs text-slate-400 hidden md:table-cell">
+                      {team.player_count}/15 players
+                    </td>
+
+                    {/* Points */}
+                    <td className="py-3 text-right pr-2">
+                      <span className="text-base font-black text-emerald-400">
+                        {team.total_points}
+                      </span>
+                      <span className="text-xs text-slate-500 ml-1">pts</span>
+                    </td>
+
+                    {/* Scout button */}
+                    <td className="py-3 text-right pr-2">
+                      <button
+                        onClick={() => onSelectTeam && onSelectTeam(team.team_id)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+                        title="Scout Team Pitch View"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

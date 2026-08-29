@@ -1,0 +1,96 @@
+Development Plan
+Phase 1: The Data Pipeline (Backend & Cache)
+Your biggest constraint is the 100 requests/day limit on API-Football.  
+Big Balls Sports Data
+Write a script that runs once every morning to fetch the day's fixtures and squad lists.
+Write a separate polling script that runs during match times (e.g., every 15 minutes) to fetch live events (goals, assists, cards) and write them to your local database.
+Build internal API routes (e.g., /api/standings, /api/player/:id) that query your local database, not the external providers.
+Phase 2: Authentication & Logic (The Join Codes)
+Since you want a login-less experience, use session codes.
+Season Code: A unique string (e.g., BARCA-2026) that defines the league context.
+Manager Code: A unique PIN generated for each kid when they create a team. They save this PIN in their phone's notes app to re-access their roster.
+Store team rosters as simple JSON arrays in your database, linked to the Manager Code.
+Phase 3: The Frontend Experience
+This needs to be engaging for a 12-year-old.
+Build a "Pitch View" where they drag and drop players into a 4-3-3 or 3-5-2 formation.
+Use a unified scoring system across all leagues (e.g., Goal = 5 pts, Assist = 3 pts, Clean Sheet = 4 pts).
+Add a "Live Standings" dashboard that updates dynamically during weekend matches.
+
+The golden rule of this architecture is that a user's action in the web app should never trigger an external API call. All frontend requests hit your local database.
+
+External APIs <-> Cron Jobs <-> SQLite <-> Backend Node.js/Python <-> REST/Websockets to Frontend React/Vue
+
+1. Database Schema (SQLite)
+Since you are self-hosting for a small group, SQLite is the perfect low-overhead choice. The schema needs to decouple the external API data from the internal game logic so your son's league can operate independently of how the data is fetched.
+players: The central directory.
+Columns: id (Primary Key matching the external API ID), name, real_team_id, position (GK, DEF, MID, FWD), current_price, status (Active, Injured).
+fixtures: The real-world match schedule.
+Columns: id, home_team_id, away_team_id, kickoff_time, status (Scheduled, In-Play, Finished).
+player_match_stats: The core scoring table. This is what your cron job writes to.
+Columns: id, player_id, fixture_id, minutes_played, goals, assists, clean_sheet, yellow_cards, red_cards, fantasy_points_calculated.
+leagues: The virtual leagues created by the kids.
+Columns: id, season_code (e.g., BARCA-2026), name, max_teams.
+teams: The kids' fantasy teams.
+Columns: id, league_id, manager_code (their login PIN), team_name, total_points.
+rosters: The mapping of real players to the kids' teams.
+Columns: id, team_id, player_id, is_starting_xi (Boolean), is_captain (Boolean).
+2. API Caching & Cron Job Engine
+The biggest hurdle is the API-Football free tier limit of 100 requests per day. A single page load pulling live stats could burn through that immediately if not cached. You must build an intermediary Node.js or Python backend that acts as a "buffer."  
+TheStatsAPI
++ 1
+The Daily Seeder (Runs at 03:00 AM):
+Makes 1 request to fetch the day's fixtures for the target leagues.
+Makes a handful of requests (if needed) to update the players table (injuries, transfers).
+Total cost: ~2-5 requests.
+The Matchday Poller (Runs only during active matches):
+Read your local fixtures table. If a match is In-Play, start the polling engine.
+Set the cron job to poll the /fixtures/statistics and /fixtures/events endpoints every 15-20 minutes — NOT every minute.
+Total cost: 4 matches happening simultaneously polled every 15 minutes over a 2-hour window = ~32 requests.
+Frontend Data Access:
+Your React/Vue frontend NEVER talks to API-Football. It queries your Node.js server (e.g., GET /api/mystats), which instantly serves the data from the SQLite player_match_stats table.
+3. Login-Less Authentication Engine
+To keep it frictionless for 12-year-olds without requiring email signups, use a token-based system relying on shared and personal codes.
+The Season Code (The Room): You generate a code (like a Kahoot PIN, e.g., LA-LIGA-26) and give it to your son. Anyone who enters this code on the landing page joins that specific league environment.
+The Manager Code (The Key): When a friend joins via the Season Code, they are prompted to create a team name and are assigned a 6-digit Manager Code (e.g., 849-201).
+Session Management:
+The web app stores the Manager Code in the browser's localStorage.
+Whenever the frontend requests data to modify a roster or view a team, it passes this code in the Authorization header.
+If they switch devices (like moving from an iPad to a PC), they simply click "Existing Manager," type their 6-digit code, and the app retrieves their team from the SQLite teams table.
+
+Here are the missing operational and architectural layers:
+The Player Acquisition Model (Game Mechanics)
+Right now, the database allows teams to have players, but there is no rule stopping all the kids from picking Lamine Yamal and Erling Haaland. You must build a constraint system:
+Salary Cap: Assign a virtual dollar value to every player (e.g., $100M budget per team). This requires adding a price column to the players table and building a frontend validator that blocks roster saves if the budget is exceeded.
+Draft System: Alternatively, build a one-time "draft room" interface where players are locked to a single team once picked. This requires a WebSocket server (like Socket.io) for real-time draft picks so the kids see players disappear from the board instantly.
+The Scoring Engine (Asynchronous Worker)
+The cron job handles fetching raw stats, but a separate process must convert those stats into fantasy points.
+Create a "Scoring Engine" script that runs immediately after the Matchday Poller finishes.
+It reads the raw goals, assists, and clean_sheets in player_match_stats, applies your custom multipliers (e.g., goals by defenders are worth more than goals by forwards), and writes the final integer to fantasy_points_calculated.
+It then aggregates those points and updates the teams.total_points field so the leaderboard is ready for the frontend to read.
+External Access & Networking
+Since your son's friends will be playing from their own houses on their phones or iPads, a local 192.168.x.x address won't work. You need to expose the homelab securely.
+You can route external traffic to your local server by leveraging your Azure infrastructure to manage the DNS routing and issue SSL certificates.
+Point a custom domain (e.g., bino-fantasy.com) via Azure DNS to a secure tunnel (like Cloudflare Tunnels or Tailscale Funnel) running on your homelab. This avoids opening router ports while ensuring the kids connect via standard HTTPS.
+Containerization (Deployment)
+To keep your homelab clean and prevent dependency conflicts, wrap the entire stack in Docker.
+Write a docker-compose.yml file that spins up three containers: the React/Vue frontend (served via Nginx), the Node/Python backend API, and a worker container for the cron jobs.
+Mount your SQLite .db file as a persistent Docker volume so you don't lose the kids' teams if the container restarts.
+1. Player Acquisition & Game Mechanics
+To prevent every kid from simply picking the same star players, you must build a constraint system into the team creation logic.
+Salary Cap: Assign each player a virtual value and give managers a $100M budget. Add a price column to the players table and enforce this limit on the frontend when a user attempts to save a roster.
+Standardized Scoring: Mirror standard fantasy rules to balance positions. For example, award 4 points for a forward's goal, 6 points for a defender's goal, 4 points for a clean sheet (defenders/goalkeepers playing 60+ minutes), and 3 points for an assist.  
+Premier League
+2. The Scoring Engine (Asynchronous Worker)
+This worker runs decoupled from the frontend so user page loads never lag while calculations happen.
+The Process: Schedule this script to trigger immediately after the Matchday Poller completes its API run.
+The Logic: It reads the raw stats from your player_match_stats table, applies your point multipliers, and writes the final integer to a fantasy_points_calculated column. It then aggregates these points to update the overarching teams leaderboard.
+3. External Access, Networking & Deployment
+For the kids to securely access the app from their own phones or iPads without opening vulnerable ports on your local router, you need a safe ingress tunnel.
+DNS & Routing: Leverage your existing Microsoft Azure infrastructure to manage the DNS routing. You can map a custom subdomain (e.g., fantasy.yourdomain.com) directly to your homelab.
+Proxy & SSL: Terminate your Azure-managed SSL certificates at a reverse proxy (like Nginx Proxy Manager or Traefik) running on your homelab to ensure the kids always connect via standard, secure HTTPS.
+Containerization: Wrap the entire stack in a docker-compose.yml file featuring three distinct services: the frontend web server, the backend API/cron worker, and a persistent volume for the SQLite database.
+4. Bonus: UX Flair for 12-Year-Olds
+To make the web app feel like a premium mobile experience rather than a data table:
+The Pitch View: Build a visual drag-and-drop soccer field where users slot their roster into valid formations (like a 4-3-3 or 3-5-2).
+Live Indicators: Use Server-Sent Events (SSE) on the frontend so the dashboard pulses or flashes green when a player on their roster scores a goal in real time.
+
