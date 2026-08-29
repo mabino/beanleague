@@ -263,7 +263,7 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
             )
         await db.commit()
 
-    # 4. Seed initial player match stats for demo
+    # 4. Seed initial player match stats for demo if both player and fixture exist in DB
     sample_stats = [
         # Lamine Yamal: 1 goal, 1 assist, 88 mins
         {"player_id": 50, "fixture_id": 1001, "minutes_played": 88, "goals": 1, "assists": 1, "clean_sheet": 0, "yellow_cards": 0, "red_cards": 0, "saves": 0},
@@ -285,21 +285,24 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
         {"player_id": 10, "fixture_id": 1001, "minutes_played": 90, "goals": 0, "assists": 0, "clean_sheet": 0, "yellow_cards": 0, "red_cards": 0, "saves": 0},
     ]
     for s in sample_stats:
-        await db.execute(
-            """
-            INSERT INTO player_match_stats (player_id, fixture_id, minutes_played, goals, assists, clean_sheet, yellow_cards, red_cards, saves)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(player_id, fixture_id) DO UPDATE SET
-                minutes_played = excluded.minutes_played,
-                goals = excluded.goals,
-                assists = excluded.assists,
-                clean_sheet = excluded.clean_sheet,
-                yellow_cards = excluded.yellow_cards,
-                red_cards = excluded.red_cards,
-                saves = excluded.saves
-            """,
-            (s["player_id"], s["fixture_id"], s["minutes_played"], s["goals"], s["assists"], s["clean_sheet"], s["yellow_cards"], s["red_cards"], s["saves"])
-        )
+        chk_p = await db.execute("SELECT 1 FROM players WHERE id = ?", (s["player_id"],))
+        chk_f = await db.execute("SELECT 1 FROM fixtures WHERE id = ?", (s["fixture_id"],))
+        if (await chk_p.fetchone()) and (await chk_f.fetchone()):
+            await db.execute(
+                """
+                INSERT INTO player_match_stats (player_id, fixture_id, minutes_played, goals, assists, clean_sheet, yellow_cards, red_cards, saves)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(player_id, fixture_id) DO UPDATE SET
+                    minutes_played = excluded.minutes_played,
+                    goals = excluded.goals,
+                    assists = excluded.assists,
+                    clean_sheet = excluded.clean_sheet,
+                    yellow_cards = excluded.yellow_cards,
+                    red_cards = excluded.red_cards,
+                    saves = excluded.saves
+                """,
+                (s["player_id"], s["fixture_id"], s["minutes_played"], s["goals"], s["assists"], s["clean_sheet"], s["yellow_cards"], s["red_cards"], s["saves"])
+            )
     await db.commit()
 
     # 5. Seed sample demo teams if empty
@@ -316,13 +319,17 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                 "INSERT INTO teams (id, league_id, manager_code, team_name, formation) VALUES (?, ?, ?, ?, ?)",
                 (dt["id"], dt["league_id"], dt["manager_code"], dt["team_name"], dt["formation"])
             )
-            for idx, pid in enumerate(dt["players"]):
-                is_starting = (idx < 11)
-                is_cap = (pid == dt["captain_id"])
-                await db.execute(
-                    "INSERT INTO rosters (team_id, player_id, is_starting_xi, is_captain, slot_index) VALUES (?, ?, ?, ?, ?)",
-                    (dt["id"], pid, 1 if is_starting else 0, 1 if is_cap else 0, idx)
-                )
+            slot = 0
+            for pid in dt["players"]:
+                chk_p = await db.execute("SELECT 1 FROM players WHERE id = ?", (pid,))
+                if await chk_p.fetchone():
+                    is_starting = (slot < 11)
+                    is_cap = (pid == dt["captain_id"])
+                    await db.execute(
+                        "INSERT INTO rosters (team_id, player_id, is_starting_xi, is_captain, slot_index) VALUES (?, ?, ?, ?, ?)",
+                        (dt["id"], pid, 1 if is_starting else 0, 1 if is_cap else 0, slot)
+                    )
+                    slot += 1
         await db.commit()
 
     # Run scoring engine to sync all points

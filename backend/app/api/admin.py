@@ -33,8 +33,13 @@ async def get_api_usage(db: aiosqlite.Connection = Depends(get_db)):
 @router.post("/seed")
 async def trigger_seeder(force_mock: bool = False, db: aiosqlite.Connection = Depends(get_db)):
     """Manually triggers the Daily Seeder."""
-    result = await run_daily_seeder(db, force_mock=force_mock)
-    return {"message": "Daily Seeder completed", "result": result}
+    try:
+        result = await run_daily_seeder(db, force_mock=force_mock)
+        return {"message": "Daily Seeder completed", "result": result}
+    except Exception as e:
+        import traceback
+        logger.exception(f"Daily Seeder failed: {e}")
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 @router.post("/poll")
 async def trigger_poller(db: aiosqlite.Connection = Depends(get_db)):
