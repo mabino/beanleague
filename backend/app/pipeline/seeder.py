@@ -152,7 +152,11 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                 "FWD": 8.5
             }
 
-            STAR_PRICES = {p["id"]: p["current_price"] for p in MOCK_PLAYERS}
+            # Name-based price mapping from curated star database
+            STAR_PRICES = {}
+            for p in MOCK_PLAYERS:
+                STAR_PRICES[p["name"].lower().strip()] = p["current_price"]
+                STAR_PRICES[p["short_name"].lower().strip()] = p["current_price"]
 
             for team in TARGET_TEAMS:
                 used_now = await client.get_today_usage(db)
@@ -174,11 +178,17 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                             pl_id = pl["id"]
                             raw_pos = pl.get("position", "Midfielder")
                             pos = POS_MAP.get(raw_pos, "MID")
-                            price = STAR_PRICES.get(pl_id, BASE_PRICES.get(pos, 6.0))
-                            photo = pl.get("photo") or f"https://media.api-sports.io/football/players/{pl_id}.png"
                             name = pl.get("name", "Unknown Player")
                             parts = name.split()
                             short_name = parts[-1] if len(parts) > 1 else name
+
+                            # Check for star price by full name, short name, or fallback to position tier
+                            price = (
+                                STAR_PRICES.get(name.lower().strip())
+                                or STAR_PRICES.get(short_name.lower().strip())
+                                or BASE_PRICES.get(pos, 6.0)
+                            )
+                            photo = pl.get("photo") or f"https://media.api-sports.io/football/players/{pl_id}.png"
 
                             await db.execute(
                                 """
@@ -189,13 +199,25 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                                     short_name = excluded.short_name,
                                     real_team_name = excluded.real_team_name,
                                     position = excluded.position,
+                                    current_price = excluded.current_price,
                                     photo_url = excluded.photo_url
                                 """,
                                 (pl_id, name, short_name, team_id, team_name, pos, price, photo, "Active")
                             )
                     await db.commit()
 
-    # 3. If API wasn't used or returned no items, seed from curated dataset
+            # Clean up dummy mock records (IDs < 100) that duplicate real API players
+            await db.execute("""
+                DELETE FROM players
+                WHERE id < 100
+                  AND (
+                    LOWER(name) IN (SELECT LOWER(name) FROM players WHERE id >= 100)
+                    OR LOWER(short_name) IN (SELECT LOWER(short_name) FROM players WHERE id >= 100)
+                  )
+            """)
+            await db.commit()
+
+    # 3. If API wasn't used or returned no items, seed from curated dataset only if empty
     cursor = await db.execute("SELECT COUNT(*) FROM players")
     player_count = (await cursor.fetchone())[0]
     
