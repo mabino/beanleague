@@ -4,6 +4,15 @@ A high-performance, login-less fantasy soccer web application designed for a 12-
 
 ---
 
+## 📚 Documentation
+
+- 🛠️ [**Setup & Installation Guide**](file:///Users/mabino/Downloads/beanleague/docs/SETUP.md): Local development, Docker Compose deployment, reverse proxy setup, and persistent database storage.
+- 📡 [**Data Sources & API-Football Guide**](file:///Users/mabino/Downloads/beanleague/docs/API_AND_DATA_SOURCES.md): API-Football key configuration, 100 requests/day rate limit economics, supported league IDs, and offline mock simulation.
+- 🔐 [**GitOps, Secrets & Azure Ingress**](file:///Users/mabino/Downloads/beanleague/docs/GITOPS_AND_SECRETS.md): Required repository secrets, `../homelab` git submodule integration, and Azure DNS routing automation.
+- 📄 [**Environment Template**](file:///Users/mabino/Downloads/beanleague/.env.example): Exhaustive reference of all environment variables.
+
+---
+
 ## 🌟 Key Features
 
 - 🎟️ **Login-Less PIN Authentication**: No emails, passwords, or OAuth. Kids join with a **Season Code** (e.g. `BARCA-2026`) and get assigned a memorable 6-digit **Manager PIN** (e.g. `849-201`) stored in `localStorage` or saved in their phone's Notes app.
