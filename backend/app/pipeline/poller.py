@@ -3,6 +3,7 @@ import logging
 import random
 from typing import Dict, Any, List
 from .api_client import ApiFootballClient
+from .coordinator import IngestCoordinator
 from .scoring import run_scoring_engine, broadcast_event
 from ..config import settings
 
@@ -11,12 +12,52 @@ logger = logging.getLogger("beanleague.poller")
 async def run_matchday_poller(db: aiosqlite.Connection) -> Dict[str, Any]:
     """
     Matchday Poller:
-    - Reads local fixtures table for In-Play matches.
-    - If active matches exist, polls statistics & events from API-Football (if key configured).
+    - Ingests / refreshes today's live matches via multi-source IngestCoordinator.
+    - Dynamically detects In-Play matches and score updates.
     - Writes events and player stats to SQLite.
     - Triggers the Scoring Engine immediately.
     """
-    # 1. Check local fixtures table for active matches
+    coordinator = IngestCoordinator()
+    
+    # 1. Fetch today's live/scheduled matches across providers
+    try:
+        today_fixtures = await coordinator.fetch_today_live_fixtures(settings.TARGET_LEAGUE_IDS)
+        if today_fixtures:
+            for f in today_fixtures:
+                await db.execute(
+                    """
+                    INSERT INTO fixtures (id, league_id, round, home_team_id, home_team_name, home_team_logo,
+                                          away_team_id, away_team_name, away_team_logo, kickoff_time, status, home_score, away_score)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        round = excluded.round,
+                        home_score = excluded.home_score,
+                        away_score = excluded.away_score,
+                        status = excluded.status,
+                        kickoff_time = excluded.kickoff_time,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        f.id,
+                        f.league_id,
+                        f.round,
+                        f.home_team_id,
+                        f.home_team_name,
+                        f.home_team_logo,
+                        f.away_team_id,
+                        f.away_team_name,
+                        f.away_team_logo,
+                        f.kickoff_time,
+                        f.status,
+                        f.home_score,
+                        f.away_score
+                    )
+                )
+            await db.commit()
+    except Exception as e:
+        logger.warning(f"Failed to fetch today live fixtures in poller: {e}")
+
+    # 2. Check local fixtures table for active matches
     cursor = await db.execute(
         "SELECT id, home_team_name, away_team_name, status FROM fixtures WHERE status = 'In-Play'"
     )

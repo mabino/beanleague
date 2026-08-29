@@ -59,16 +59,18 @@ class IngestCoordinator:
         reconciled = reconcile_fixtures(all_fixtures)
         return reconciled, winning_source
 
-    async def fetch_squad(self, team_id: int, team_name: str) -> Tuple[List[NormalizedPlayer], str]:
-        """Fetches squad roster with fallback across providers."""
+    async def fetch_today_live_fixtures(self, league_ids: List[int]) -> List[NormalizedFixture]:
+        """Fetches today's live/scheduled fixtures across all active providers."""
+        all_today: List[NormalizedFixture] = []
         for adapter in self.adapters:
             if not adapter.is_configured():
                 continue
-            try:
-                squad = await adapter.fetch_squad(team_id, team_name)
-                if squad:
-                    return squad, adapter.name
-            except Exception as e:
-                logger.warning(f"Squad fetch from '{adapter.name}' failed: {e}")
-
-        return [], "none"
+            if hasattr(adapter, "fetch_today_events"):
+                for lg in league_ids:
+                    try:
+                        matches = await adapter.fetch_today_events(lg)
+                        if matches:
+                            all_today.extend(matches)
+                    except Exception as e:
+                        logger.warning(f"Error fetching today events from {adapter.name}: {e}")
+        return reconcile_fixtures(all_today)

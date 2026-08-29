@@ -92,5 +92,79 @@ class TheSportsDbAdapter(BaseSportsAdapter):
             logger.exception(f"Error fetching from TheSportsDB: {e}")
             return []
 
+    async def fetch_today_events(self, league_id: int) -> List[NormalizedFixture]:
+        """Fetches live/today matches from TheSportsDB with dynamic in-play status detection."""
+        tsdb_id = TSDB_LEAGUE_MAP.get(league_id)
+        if not tsdb_id:
+            return []
+
+        from datetime import datetime, timezone
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        url = f"{self.base_url}/eventsday.php"
+        params = {"d": today_str, "l": tsdb_id}
+
+        try:
+            async with httpx.AsyncClient(timeout=15.0, headers={"User-Agent": "BeanLeague/1.0"}) as client:
+                resp = await client.get(url, params=params)
+                if resp.status_code != 200:
+                    return []
+                data = resp.json()
+                events = data.get("events") or []
+
+                now_utc = datetime.now(timezone.utc)
+                results = []
+                for ev in events:
+                    ev_id = int(ev.get("idEvent", 0) or 0)
+                    round_str = f"Matchday {ev.get('intRound')}" if ev.get("intRound") else "Matchday Live"
+                    st_str = ev.get("strStatus", "NS")
+                    
+                    date_str = ev.get("dateEvent", today_str)
+                    time_str = ev.get("strTime", "00:00:00")
+                    iso_date = f"{date_str}T{time_str}Z" if date_str else ""
+                    
+                    # Dynamic Status calculation
+                    if st_str in ("FT", "AET", "PEN", "Match Finished"):
+                        mapped_status = "Finished"
+                    elif st_str in ("1H", "2H", "HT", "ET", "P", "Live", "In-Play"):
+                        mapped_status = "In-Play"
+                    elif st_str in ("Postponed", "PST", "Cancelled"):
+                        mapped_status = "Postponed"
+                    else:
+                        try:
+                            ko_dt = datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
+                            diff_min = (now_utc - ko_dt).total_seconds() / 60.0
+                            if 0 <= diff_min <= 115:
+                                mapped_status = "In-Play"
+                            elif diff_min > 115:
+                                mapped_status = "Finished"
+                            else:
+                                mapped_status = "Scheduled"
+                        except Exception:
+                            mapped_status = "Scheduled"
+
+                    hs = int(ev.get("intHomeScore", 0) or 0) if ev.get("intHomeScore") is not None else 0
+                    as_ = int(ev.get("intAwayScore", 0) or 0) if ev.get("intAwayScore") is not None else 0
+
+                    results.append(NormalizedFixture(
+                        id=3000000 + ev_id,
+                        league_id=league_id,
+                        round=round_str,
+                        home_team_id=int(ev.get("idHomeTeam", 0) or 0),
+                        home_team_name=ev.get("strHomeTeam", "Home Team"),
+                        home_team_logo=ev.get("strHomeTeamBadge"),
+                        away_team_id=int(ev.get("idAwayTeam", 0) or 0),
+                        away_team_name=ev.get("strAwayTeam", "Away Team"),
+                        away_team_logo=ev.get("strAwayTeamBadge"),
+                        kickoff_time=iso_date,
+                        status=mapped_status,
+                        home_score=hs,
+                        away_score=as_,
+                        source=self.name
+                    ))
+                return results
+        except Exception as e:
+            logger.exception(f"Error fetching today events from TheSportsDB: {e}")
+            return []
+
     async def fetch_squad(self, team_id: int, team_name: str) -> List[NormalizedPlayer]:
         return []
