@@ -47,7 +47,7 @@ export const LiveEventsProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [pulsePlayerIds, setPulsePlayerIds] = useState(new Set());
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
 
   const triggerConfetti = useCallback(() => {
     confetti({

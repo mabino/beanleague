@@ -14,6 +14,7 @@ const FORMATION_ROWS = {
 
 export const PitchView = ({
   formation = '4-3-3',
+  onFormationChange,
   startingPlayers = [],
   benchPlayers = [],
   captainId = null,
@@ -40,8 +41,39 @@ export const PitchView = ({
   // Bench slots (max 4)
   const benchSlots = [...benchPlayers, ...Array(Math.max(0, 4 - benchPlayers.length)).fill(null)];
 
+  const availableFormations = Object.keys(FORMATION_ROWS);
+
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto px-1 sm:px-0">
+      {/* Integrated Tactical Header / Formation Bar */}
+      <div className="w-full mb-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 sm:p-3 shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-0.5 no-scrollbar flex-1">
+          <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider pl-1 shrink-0">
+            Shape:
+          </span>
+          {availableFormations.map((f) => (
+            <button
+              key={f}
+              onClick={() => !isReadonly && onFormationChange && onFormationChange(f)}
+              disabled={isReadonly}
+              className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-black transition-all whitespace-nowrap border shrink-0 ${
+                formation === f
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/30 scale-105'
+                  : isReadonly
+                  ? 'hidden'
+                  : 'bg-slate-950/80 hover:bg-slate-800 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <div className="text-[10px] sm:text-[11px] font-mono text-emerald-400/90 font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+          {formationConfig.def} DEF • {formationConfig.mid} MID • {formationConfig.fwd} FWD
+        </div>
+      </div>
+
       {/* Soccer Pitch Container */}
       <div className="relative w-full rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-slate-700/80 pitch-bg overflow-hidden shadow-2xl p-2 xs:p-3 sm:p-5 md:p-6 select-none">
         {/* Visual Pitch Markings */}

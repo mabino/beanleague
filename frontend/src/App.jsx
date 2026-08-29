@@ -6,7 +6,6 @@ import { api } from './api/client';
 import { PitchView } from './components/PitchView';
 import { BudgetBar } from './components/BudgetBar';
 import { PlayerMarket } from './components/PlayerMarket';
-import { FormationSelector } from './components/FormationSelector';
 import { LiveLeaderboard } from './components/LiveLeaderboard';
 import { MatchTicker } from './components/MatchTicker';
 import { LivePulseToast } from './components/LivePulseToast';
@@ -321,17 +320,6 @@ export function App() {
         <MatchTicker />
       </header>
 
-      {/* Subheader Toolbar (Clean Formation Selector) */}
-      <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
-        {activeTab === 'pitch' ? (
-          <FormationSelector value={formation} onChange={(f) => setFormation(f)} />
-        ) : (
-          <div className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
-            Live Season Standings & Scouting Reports
-          </div>
-        )}
-      </div>
-
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-4">
         {saveSuccessMsg && (
@@ -355,9 +343,10 @@ export function App() {
               validationErrors={validationErrors}
             />
 
-            {/* Tactical Pitch View */}
+            {/* Tactical Pitch View with integrated Formation Selector */}
             <PitchView
               formation={formation}
+              onFormationChange={(f) => setFormation(f)}
               startingPlayers={startingPlayers}
               benchPlayers={benchPlayers}
               captainId={captainId}
