@@ -80,7 +80,7 @@ async def check_external_api_status():
 async def get_recent_api_logs(limit: int = 50, db: aiosqlite.Connection = Depends(get_db)):
     """Returns recent API usage log entries from SQLite."""
     cursor = await db.execute(
-        "SELECT id, date, endpoint, status_code, cost, created_at FROM api_usage_log ORDER BY id DESC LIMIT ?",
+        "SELECT id, date, endpoint, status_code, cost, timestamp FROM api_usage_log ORDER BY id DESC LIMIT ?",
         (limit,)
     )
     rows = await cursor.fetchall()

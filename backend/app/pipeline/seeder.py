@@ -95,25 +95,14 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                     )
                 await db.commit()
 
-            # Fetch fixtures for target leagues across the weekly window
+            # Fetch fixtures for target leagues directly for the configured season
             for league_id in settings.TARGET_LEAGUE_IDS:
                 resp = await client.fetch(
                     "fixtures",
-                    params={"league": league_id, "season": settings.TARGET_SEASON, "from": from_date, "to": to_date},
+                    params={"league": league_id, "season": settings.TARGET_SEASON},
                     db=db
                 )
                 items = resp.get("response", []) if resp else []
-                
-                # If no fixtures found in exact 7-day window, fetch full season fixtures (Free tier safe)
-                if not items:
-                    season_resp = await client.fetch(
-                        "fixtures",
-                        params={"league": league_id, "season": settings.TARGET_SEASON},
-                        db=db
-                    )
-                    if season_resp and season_resp.get("response"):
-                        items = season_resp["response"]
-
                 await insert_fixture_items(items)
 
             # If real fixtures were fetched, remove mock placeholder fixtures
