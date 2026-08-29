@@ -116,12 +116,36 @@ async def test_roster_save_flow(client):
     assert my_roster["total_cost"] <= 100.0
 
 @pytest.mark.asyncio
+async def test_system_status_public(client):
+    status_resp = await client.get("/api/system/status")
+    assert status_resp.status_code == 200
+    data = status_resp.json()
+    assert data["status"] == "operational"
+    assert "database" in data
+    assert "sse_stream" in data
+    assert "poller" in data
+
+@pytest.mark.asyncio
 async def test_admin_api_usage_and_simulation(client):
-    usage_resp = await client.get("/api/admin/usage")
+    # 1. Unauthenticated request without Admin PIN should return 401 Unauthorized
+    unauth_resp = await client.get("/api/admin/usage")
+    assert unauth_resp.status_code == 401
+
+    unauth_sim = await client.post("/api/admin/simulate-tick")
+    assert unauth_sim.status_code == 401
+
+    # 2. Authenticated request with valid Admin PIN
+    admin_headers = {"X-Admin-PIN": "BEAN-ADMIN-2026"}
+    verify_resp = await client.post("/api/admin/verify", headers=admin_headers)
+    assert verify_resp.status_code == 200
+    assert verify_resp.json()["success"] is True
+
+    usage_resp = await client.get("/api/admin/usage", headers=admin_headers)
     assert usage_resp.status_code == 200
     usage = usage_resp.json()
     assert usage["daily_limit"] == 100
 
-    sim_resp = await client.post("/api/admin/simulate-tick")
+    sim_resp = await client.post("/api/admin/simulate-tick", headers=admin_headers)
     assert sim_resp.status_code == 200
     assert sim_resp.json()["message"] == "Simulated match tick executed"
+

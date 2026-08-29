@@ -132,24 +132,73 @@ export const api = {
     return this.request(`/api/fixtures${query ? `?${query}` : ""}`);
   },
 
-  // Live & Admin
+  // Public System Status & Telemetry
+  getSystemStatus() {
+    return this.request("/api/system/status");
+  },
+
   getRecentEvents() {
     return this.request("/api/events/recent");
   },
 
-  getApiUsage() {
-    return this.request("/api/admin/usage");
+  // Protected Admin Portal (Requires Admin PIN header)
+  verifyAdminPin(adminPin) {
+    return this.request("/api/admin/verify", {
+      method: "POST",
+      headers: { "X-Admin-PIN": adminPin },
+    });
   },
 
-  simulateTick() {
-    return this.request("/api/admin/simulate-tick", { method: "POST" });
+  getApiUsage(adminPin) {
+    return this.request("/api/admin/usage", {
+      headers: adminPin ? { "X-Admin-PIN": adminPin } : {},
+    });
   },
 
-  triggerSeeder() {
-    return this.request("/api/admin/seed", { method: "POST" });
+  adminSimulateTick(adminPin) {
+    return this.request("/api/admin/simulate-tick", {
+      method: "POST",
+      headers: { "X-Admin-PIN": adminPin },
+    });
   },
 
-  triggerPoller() {
-    return this.request("/api/admin/poll", { method: "POST" });
-  }
+  adminTriggerSeeder(adminPin, forceMock = false) {
+    return this.request(`/api/admin/seed?force_mock=${forceMock}`, {
+      method: "POST",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminTriggerPoller(adminPin) {
+    return this.request("/api/admin/poll", {
+      method: "POST",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminRecalculateScores(adminPin) {
+    return this.request("/api/admin/recalculate-scores", {
+      method: "POST",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminResetUsage(adminPin) {
+    return this.request("/api/admin/reset-usage", {
+      method: "POST",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminGetLogs(adminPin, limit = 50) {
+    return this.request(`/api/admin/logs?limit=${limit}`, {
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminApiStatus(adminPin) {
+    return this.request("/api/admin/api-status", {
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
 };

@@ -32,6 +32,9 @@ class Settings:
     POLL_INTERVAL_MINUTES: int = int(os.getenv("POLL_INTERVAL_MINUTES", "15"))
     ENABLE_SCHEDULER: bool = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
     
+    # Admin Security PIN
+    ADMIN_PIN: str = os.getenv("ADMIN_PIN", "BEAN-ADMIN-2026")
+
     # Server
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
