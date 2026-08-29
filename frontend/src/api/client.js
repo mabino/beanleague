@@ -75,8 +75,11 @@ export const api = {
 
   // Players Directory
   getPlayers(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/api/players?${query}`);
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== "" && v !== "undefined")
+    );
+    const query = new URLSearchParams(cleanParams).toString();
+    return this.request(`/api/players${query ? `?${query}` : ""}`);
   },
 
   getPlayerDetails(id) {
@@ -85,8 +88,11 @@ export const api = {
 
   // Fixtures
   getFixtures(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/api/fixtures?${query}`);
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== "" && v !== "undefined")
+    );
+    const query = new URLSearchParams(cleanParams).toString();
+    return this.request(`/api/fixtures${query ? `?${query}` : ""}`);
   },
 
   // Live & Admin

@@ -23,16 +23,16 @@ async def list_players(
     conditions = []
     params = []
 
-    if search:
+    if search and search.strip().lower() not in ("undefined", "null", "none", ""):
         conditions.append("(p.name LIKE ? OR p.short_name LIKE ?)")
         search_param = f"%{search.strip()}%"
         params.extend([search_param, search_param])
 
-    if position:
+    if position and position.strip().upper() not in ("ALL", "UNDEFINED", "NULL", "NONE", ""):
         conditions.append("p.position = ?")
         params.append(position.strip().upper())
 
-    if team:
+    if team and team.strip().lower() not in ("undefined", "null", "none", ""):
         conditions.append("p.real_team_name LIKE ?")
         params.append(f"%{team.strip()}%")
 
