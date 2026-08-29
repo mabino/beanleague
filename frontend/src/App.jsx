@@ -214,86 +214,54 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-slate-950/90 border-b border-slate-800 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 bg-slate-950/95 border-b border-slate-800 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4">
           {/* Logo, Kit Avatar & League Tag */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsKitModalOpen(true)}
               className="shrink-0 p-1 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400/60 hover:scale-105 transition shadow-sm group"
               title="Click to customize team jersey & crest"
             >
-              <JerseyKit kitConfig={team?.kit_config} size={36} />
+              <JerseyKit kitConfig={team?.kit_config} size={32} />
             </button>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="text-base sm:text-xl font-black text-white tracking-tight truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
                   {team?.team_name || 'BeanLeague Fantasy'}
                 </h1>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   {seasonCode}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
+              <p className="text-[10px] sm:text-[11px] text-slate-400">
                 Score: <strong className="text-emerald-400 font-bold">{team?.total_points || 0} pts</strong>
               </p>
             </div>
           </div>
 
-          {/* Navigation View Tabs */}
-          <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800">
-            <button
-              onClick={() => setActiveTab('pitch')}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeTab === 'pitch'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Pitch View</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('standings')}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeTab === 'standings'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              <span>Standings & Scout</span>
-            </button>
-            <button
-              onClick={() => setIsMarketOpen(true)}
-              className="px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black text-slate-400 hover:text-white transition flex items-center gap-1.5"
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Transfer Market</span>
-            </button>
-          </div>
-
-          {/* Manager PIN & Actions */}
-          <div className="flex items-center gap-2">
+          {/* Manager PIN & Sound Actions (Top right on mobile) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 order-2 md:order-3">
             {managerCode ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 sm:gap-1.5">
                 {/* PIN Copy Badge */}
                 <button
                   onClick={handleCopyMyPin}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-xs font-mono text-emerald-400 flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                  className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-[11px] sm:text-xs font-mono text-emerald-400 flex items-center gap-1 sm:gap-1.5 shadow-sm transition active:scale-95"
                   title="Click to copy your PIN to phone notes"
                 >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span className="font-bold">PIN: {managerCode}</span>
+                  <KeyRound className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <span className="font-bold hidden xs:inline">PIN:</span>
+                  <span className="font-bold">{managerCode}</span>
                   {copiedPin ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-500" />}
                 </button>
 
                 <button
                   onClick={logout}
-                  className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 transition"
+                  className="p-1 sm:p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 transition"
                   title="Switch Manager"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
             ) : (
@@ -308,10 +276,43 @@ export function App() {
             {/* Sound Toggle */}
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+              className="p-1 sm:p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
               title={soundEnabled ? 'Mute Sounds' : 'Enable Sounds'}
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4" />}
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+            </button>
+          </div>
+
+          {/* Navigation View Tabs (Full width on phone, inline on tablet/desktop) */}
+          <div className="w-full md:w-auto order-3 md:order-2 flex items-center justify-between sm:justify-start bg-slate-900 p-1 rounded-2xl border border-slate-800 gap-1 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('pitch')}
+              className={`flex-1 md:flex-initial px-2.5 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition flex items-center justify-center gap-1 sm:gap-1.5 ${
+                activeTab === 'pitch'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>Pitch</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('standings')}
+              className={`flex-1 md:flex-initial px-2.5 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition flex items-center justify-center gap-1 sm:gap-1.5 ${
+                activeTab === 'standings'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>Standings</span>
+            </button>
+            <button
+              onClick={() => setIsMarketOpen(true)}
+              className="flex-1 md:flex-initial px-2.5 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-slate-400 hover:text-white transition flex items-center justify-center gap-1 sm:gap-1.5"
+            >
+              <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>Market</span>
             </button>
           </div>
         </div>
@@ -321,18 +322,18 @@ export function App() {
       </header>
 
       {/* Subheader Toolbar (Clean Formation Selector) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
         {activeTab === 'pitch' ? (
           <FormationSelector value={formation} onChange={(f) => setFormation(f)} />
         ) : (
-          <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+          <div className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
             Live Season Standings & Scouting Reports
           </div>
         )}
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-4">
         {saveSuccessMsg && (
           <div className="mb-4 p-3 bg-emerald-950/80 border border-emerald-400/60 rounded-2xl text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-lg animate-bounce-short">
             <Sparkles className="w-4 h-4" />
@@ -377,15 +378,15 @@ export function App() {
       </main>
 
       {/* System Status & Admin Footer Bar */}
-      <footer className="w-full border-t border-slate-900 bg-slate-950/80 backdrop-blur-md py-3 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-slate-500">
+      <footer className="w-full border-t border-slate-900 bg-slate-950/90 backdrop-blur-md py-3 px-3 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
           <button
             onClick={() => setIsStatusModalOpen(true)}
             className="flex items-center gap-2 hover:text-slate-300 transition cursor-pointer"
             title="Inspect SSE Live Stream, Adapters & System Health"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-slate-400">System Telemetry & Live Feeds</span>
+            <span className="font-semibold text-slate-400 text-[11px] sm:text-xs">System Telemetry & Live Feeds</span>
           </button>
 
           <span className="hidden md:inline text-[11px] text-slate-600 font-medium">
@@ -405,8 +406,8 @@ export function App() {
 
       {/* Transfer Market Modal / Drawer */}
       {isMarketOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-2xl h-[650px] max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-2xl h-[90vh] sm:h-[650px] max-h-[92vh]">
             <PlayerMarket
               selectedSquadIds={selectedSquadIds}
               onAddPlayer={handleAddPlayer}

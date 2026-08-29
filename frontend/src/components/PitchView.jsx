@@ -41,26 +41,26 @@ export const PitchView = ({
   const benchSlots = [...benchPlayers, ...Array(Math.max(0, 4 - benchPlayers.length)).fill(null)];
 
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto px-1 sm:px-0">
       {/* Soccer Pitch Container */}
-      <div className="relative w-full rounded-3xl border-4 border-slate-700/80 pitch-bg overflow-hidden shadow-2xl p-4 sm:p-6 select-none">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-slate-700/80 pitch-bg overflow-hidden shadow-2xl p-2 xs:p-3 sm:p-5 md:p-6 select-none">
         {/* Visual Pitch Markings */}
         <div className="absolute inset-0 pointer-events-none opacity-40">
           {/* Halfway Line */}
           <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white -translate-y-1/2"></div>
           {/* Center Circle */}
-          <div className="absolute top-1/2 left-1/2 w-28 sm:w-36 h-28 sm:h-36 rounded-full border-2 border-white -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-white -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute top-1/2 left-1/2 w-20 sm:w-28 md:w-36 h-20 sm:h-28 md:h-36 rounded-full border-2 border-white -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full bg-white -translate-x-1/2 -translate-y-1/2"></div>
           {/* Top Penalty Box */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 h-20 sm:h-28 border-b-2 border-x-2 border-white rounded-b-lg"></div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 sm:w-48 md:w-64 h-16 sm:h-20 md:h-28 border-b-2 border-x-2 border-white rounded-b-lg"></div>
           {/* Bottom Penalty Box */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 h-20 sm:h-28 border-t-2 border-x-2 border-white rounded-t-lg"></div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 sm:w-48 md:w-64 h-16 sm:h-20 md:h-28 border-t-2 border-x-2 border-white rounded-t-lg"></div>
         </div>
 
         {/* Pitch Player Rows (FWD -> MID -> DEF -> GK) */}
-        <div className="relative z-10 flex flex-col justify-between h-[540px] sm:h-[620px] py-2">
+        <div className="relative z-10 flex flex-col justify-between h-[450px] xs:h-[490px] sm:h-[560px] md:h-[620px] py-1 sm:py-2">
           {/* Forwards (Attackers) */}
-          <div className="flex justify-center items-center gap-2 sm:gap-6 flex-wrap">
+          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
             {fwds.map((player, idx) => (
               <PlayerCard
                 key={player ? `fwd-${player.id || player.player_id}` : `fwd-empty-${idx}`}
@@ -82,7 +82,7 @@ export const PitchView = ({
           </div>
 
           {/* Midfielders */}
-          <div className="flex justify-center items-center gap-2 sm:gap-5 flex-wrap">
+          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
             {mids.map((player, idx) => (
               <PlayerCard
                 key={player ? `mid-${player.id || player.player_id}` : `mid-empty-${idx}`}
@@ -104,7 +104,7 @@ export const PitchView = ({
           </div>
 
           {/* Defenders */}
-          <div className="flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
+          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
             {defs.map((player, idx) => (
               <PlayerCard
                 key={player ? `def-${player.id || player.player_id}` : `def-empty-${idx}`}
@@ -126,7 +126,7 @@ export const PitchView = ({
           </div>
 
           {/* Goalkeeper */}
-          <div className="flex justify-center items-center">
+          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
             {gks.map((player, idx) => (
               <PlayerCard
                 key={player ? `gk-${player.id || player.player_id}` : `gk-empty-${idx}`}
@@ -150,20 +150,20 @@ export const PitchView = ({
       </div>
 
       {/* Substitutes / Bench Section */}
-      <div className="w-full mt-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-sm font-bold text-slate-200 tracking-wide uppercase">
+      <div className="w-full mt-3 sm:mt-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+            <h3 className="text-xs sm:text-sm font-bold text-slate-200 tracking-wide uppercase">
               Substitutes Bench ({benchPlayers.length}/4)
             </h3>
           </div>
-          <span className="text-xs text-slate-400">
-            Auto-subs score if starter plays 0 mins
+          <span className="text-[10px] sm:text-xs text-slate-400">
+            Auto-subs if starter plays 0m
           </span>
         </div>
 
-        <div className="flex justify-center items-center gap-3 sm:gap-6 flex-wrap">
+        <div className="flex justify-center items-center gap-1.5 xs:gap-2 sm:gap-4 md:gap-6 flex-wrap">
           {benchSlots.map((player, idx) => (
             <PlayerCard
               key={player ? `bench-${player.id || player.player_id}` : `bench-empty-${idx}`}

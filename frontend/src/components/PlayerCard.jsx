@@ -36,15 +36,15 @@ export const PlayerCard = ({
     return (
       <div
         onClick={onClick}
-        className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer select-none
+        className={`flex flex-col items-center justify-center rounded-xl sm:rounded-2xl border-2 border-dashed transition-all cursor-pointer select-none
           ${isTargetSlot ? 'border-emerald-400 bg-emerald-950/40 scale-105 animate-pulse' : 'border-white/20 bg-black/20 hover:border-white/40 hover:bg-black/40'}
-          ${compact ? 'w-16 h-20 p-1' : 'w-24 sm:w-28 h-28 sm:h-32 p-2'}`}
+          ${compact ? 'w-[60px] xs:w-[68px] sm:w-20 h-20 sm:h-24 p-1' : 'w-[68px] xs:w-[76px] sm:w-24 md:w-28 h-24 xs:h-26 sm:h-28 md:h-32 p-1 sm:p-2'}`}
       >
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/40 mb-1">
-          <Zap className="w-4 h-4" />
+        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/10 flex items-center justify-center text-white/40 mb-1">
+          <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
         </div>
-        <span className="text-[10px] sm:text-xs font-semibold text-white/50 text-center">
-          + Add Player
+        <span className="text-[9px] xs:text-[10px] sm:text-xs font-semibold text-white/50 text-center leading-tight">
+          + Add
         </span>
       </div>
     );
@@ -56,16 +56,16 @@ export const PlayerCard = ({
   return (
     <div
       onClick={onClick}
-      className={`relative group rounded-xl border transition-all duration-300 select-none flex flex-col items-center
-        ${isPulsing ? 'animate-glow-green scale-110 ring-4 ring-emerald-400 shadow-2xl z-20' : 'hover:scale-105 hover:shadow-xl'}
-        ${isCaptain ? 'border-amber-400 shadow-amber-500/20 shadow-lg' : 'border-white/20 bg-slate-900/80 backdrop-blur-md'}
-        ${compact ? 'w-20 sm:w-24 p-1.5' : 'w-24 sm:w-28 p-2'}`}
+      className={`relative group rounded-xl sm:rounded-2xl border transition-all duration-300 select-none flex flex-col items-center
+        ${isPulsing ? 'animate-glow-green scale-110 ring-2 sm:ring-4 ring-emerald-400 shadow-2xl z-20' : 'hover:scale-105 hover:shadow-xl'}
+        ${isCaptain ? 'border-amber-400 shadow-amber-500/20 shadow-lg' : 'border-white/20 bg-slate-900/85 backdrop-blur-md'}
+        ${compact ? 'w-[60px] xs:w-[68px] sm:w-20 md:w-24 p-1 sm:p-1.5' : 'w-[68px] xs:w-[76px] sm:w-24 md:w-28 p-1 sm:p-1.5 md:p-2'}`}
     >
       {/* Captain Ribbon */}
       {isCaptain && isStarting && (
-        <div className="absolute -top-2.5 -left-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-0.5 z-10 border border-yellow-200">
-          <Crown className="w-3 h-3 fill-slate-950" />
-          <span>CAPTAIN 2X</span>
+        <div className="absolute -top-2 -left-1 sm:-left-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[8px] sm:text-[10px] font-black px-1 sm:px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-0.5 z-10 border border-yellow-200">
+          <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-slate-950" />
+          <span>CAPTAIN</span>
         </div>
       )}
 
@@ -76,15 +76,15 @@ export const PlayerCard = ({
             e.stopPropagation();
             onRemove(player);
           }}
-          className="absolute -top-2 -right-2 w-5 h-5 bg-rose-600 hover:bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow z-10"
+          className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-rose-600 hover:bg-rose-500 text-white rounded-full flex items-center justify-center opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity shadow z-10"
           title="Remove player"
         >
-          <X className="w-3 h-3" />
+          <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
         </button>
       )}
 
       {/* Jersey / Photo Avatar */}
-      <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gradient-to-br ${jerseyGradient} p-0.5 flex items-center justify-center shadow-inner border border-white/20 mb-1`}>
+      <div className={`relative w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-gradient-to-br ${jerseyGradient} p-0.5 flex items-center justify-center shadow-inner border border-white/20 mb-0.5 sm:mb-1`}>
         <img
           src={player.photo_url || `/beanleague/api/players/${player.player_id || player.id}/photo`}
           alt={player.name}
@@ -97,37 +97,37 @@ export const PlayerCard = ({
           }}
         />
         <div className="avatar-fallback hidden flex-col items-center justify-center text-center w-full h-full">
-          <span className="text-[10px] font-bold tracking-tight opacity-75">
+          <span className="text-[8px] sm:text-[10px] font-bold tracking-tight opacity-75">
             {player.real_team_name?.slice(0, 3)?.toUpperCase() || 'FC'}
           </span>
-          <span className="text-xs sm:text-sm font-black">
+          <span className="text-[9px] sm:text-xs font-black">
             {player.position}
           </span>
         </div>
 
         {/* Live Score Floating Badge */}
-        <div className="absolute -bottom-1 -right-1 bg-slate-950/90 border border-emerald-400 text-emerald-400 font-extrabold text-[9px] sm:text-[10px] px-1 rounded shadow z-10">
-          {player.match_points ?? player.fantasy_points ?? 0} pts
+        <div className="absolute -bottom-1 -right-1 bg-slate-950/90 border border-emerald-400 text-emerald-400 font-extrabold text-[8px] sm:text-[10px] px-0.5 sm:px-1 rounded shadow z-10">
+          {player.match_points ?? player.fantasy_points ?? 0}p
         </div>
       </div>
 
       {/* Player Name */}
       <div className="w-full text-center px-0.5 overflow-hidden">
-        <p className="text-xs sm:text-sm font-bold text-white truncate drop-shadow-sm">
+        <p className="text-[10px] xs:text-[11px] sm:text-xs md:text-sm font-bold text-white truncate drop-shadow-sm">
           {player.short_name || player.name?.split(' ')?.pop() || player.name}
         </p>
-        <p className="text-[10px] text-slate-400 truncate">
+        <p className="text-[8px] sm:text-[10px] text-slate-400 truncate">
           {player.real_team_name || 'Club'}
         </p>
       </div>
 
       {/* Price, Video Highlights & Captain Action Row */}
-      <div className="w-full mt-1 pt-1 border-t border-white/10 flex items-center justify-between text-[10px]">
+      <div className="w-full mt-0.5 sm:mt-1 pt-0.5 sm:pt-1 border-t border-white/10 flex items-center justify-between text-[8px] xs:text-[9px] sm:text-[10px]">
         <span className="font-semibold text-emerald-300">
           ${player.current_price?.toFixed(1)}M
         </span>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {videoCount > 0 && (
             <button
               onClick={(e) => {
@@ -137,8 +137,8 @@ export const PlayerCard = ({
               className="px-1 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 transition flex items-center gap-0.5"
               title={`${videoCount} YouTube highlight reels`}
             >
-              <Video className="w-2.5 h-2.5" />
-              <span className="text-[9px] font-bold">{videoCount}</span>
+              <Video className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+              <span className="text-[8px] sm:text-[9px] font-bold">{videoCount}</span>
             </button>
           )}
 
@@ -148,10 +148,10 @@ export const PlayerCard = ({
                 e.stopPropagation();
                 onMakeCaptain(player);
               }}
-              className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 transition flex items-center gap-0.5"
+              className="text-[8px] sm:text-[9px] px-0.5 sm:px-1 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 transition flex items-center gap-0.5"
               title="Make Captain (2x points)"
             >
-              <Crown className="w-2.5 h-2.5" /> (C)
+              <Crown className="w-2 h-2 sm:w-2.5 sm:h-2.5" /> (C)
             </button>
           )}
         </div>

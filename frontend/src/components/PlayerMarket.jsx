@@ -84,25 +84,27 @@ export const PlayerMarket = ({
           />
         </div>
 
-        {/* Position Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {POSITION_FILTERS.map((pos) => (
-            <button
-              key={pos}
-              onClick={() => setActivePos(pos)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap
-                ${
-                  activePos === pos
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                }`}
-            >
-              {pos}
-            </button>
-          ))}
+        {/* Position Filter Tabs & Sort Selector */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+            {POSITION_FILTERS.map((pos) => (
+              <button
+                key={pos}
+                onClick={() => setActivePos(pos)}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap
+                  ${
+                    activePos === pos
+                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  }`}
+              >
+                {pos}
+              </button>
+            ))}
+          </div>
 
           {/* Sort Selector */}
-          <div className="ml-auto flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-1 text-xs">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
