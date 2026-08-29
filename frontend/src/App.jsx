@@ -297,12 +297,12 @@ export function App() {
               }`}
             >
               <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span>Pitch</span>
+              <span>My Team</span>
             </button>
             <button
-              onClick={() => setActiveTab('standings')}
+              onClick={() => setActiveTab('leaderboard')}
               className={`flex-1 md:flex-initial px-2.5 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition flex items-center justify-center gap-1 sm:gap-1.5 ${
-                activeTab === 'standings'
+                activeTab === 'leaderboard'
                   ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-white'
               }`}
@@ -310,22 +310,16 @@ export function App() {
               <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Standings</span>
             </button>
-            <button
-              onClick={() => setIsMarketOpen(true)}
-              className="flex-1 md:flex-initial px-2.5 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-slate-400 hover:text-white transition flex items-center justify-center gap-1 sm:gap-1.5"
-            >
-              <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span>Market</span>
-            </button>
           </div>
         </div>
-
-        {/* Live Matchday Ticker */}
-        <MatchTicker />
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-4">
+      {/* Main Pitch Field & Standings Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Live Matchday Live Events & Scores Ticker Ribbon */}
+        <MatchTicker />
+
+        {/* Save Roster Feedback Banner */}
         {saveSuccessMsg && (
           <div className="mb-4 p-3 bg-emerald-950/80 border border-emerald-400/60 rounded-2xl text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-lg animate-bounce-short">
             <Sparkles className="w-4 h-4" />
@@ -338,7 +332,7 @@ export function App() {
             {/* Salary Cap Budget Bar */}
             <BudgetBar
               totalCost={totalCost}
-              salaryCap={100.0}
+              salaryCap={roster?.salary_cap || 100.0}
               startingCount={startingPlayers.length}
               benchCount={benchPlayers.length}
               hasCaptain={captainId !== null && startingPlayers.some((p) => (p.player_id || p.id) === captainId)}
@@ -377,23 +371,23 @@ export function App() {
           <button
             onClick={() => setIsStatusModalOpen(true)}
             className="flex items-center gap-2 hover:text-slate-300 transition cursor-pointer"
-            title="Inspect SSE Live Stream, Adapters & System Health"
+            title="System Telemetry & Live Feeds"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-slate-400 text-[11px] sm:text-xs">System Telemetry & Live Feeds</span>
+            <span className="font-semibold text-slate-400 text-[11px] sm:text-xs">System Status</span>
           </button>
 
           <span className="hidden md:inline text-[11px] text-slate-600 font-medium">
-            BeanLeague Fantasy Soccer • 2026 Season
+            BeanLeague Soccer
           </span>
 
           <button
             onClick={() => setIsAdminModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-amber-400 transition font-bold text-[11px] cursor-pointer"
-            title="Admin & Developer Sandbox"
+            title="Admin Portal"
           >
             <Lock className="w-3 h-3 text-amber-400" />
-            <span>Admin Portal</span>
+            <span>Admin</span>
           </button>
         </div>
       </footer>

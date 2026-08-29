@@ -32,7 +32,7 @@ export const BudgetBar = ({
               </div>
               <div>
                 <span className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-semibold">
-                  Team Salary Cap
+                  Budget
                 </span>
                 <div className="flex items-baseline gap-1.5">
                   <span className={`text-base sm:text-xl font-black ${isOverBudget ? 'text-rose-400' : 'text-white'}`}>
@@ -47,7 +47,7 @@ export const BudgetBar = ({
 
             <div className="text-right">
               <span className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-semibold block">
-                Remaining
+                Left
               </span>
               <span className={`text-sm sm:text-lg font-extrabold ${remaining < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                 ${remaining.toFixed(1)}M
@@ -83,7 +83,7 @@ export const BudgetBar = ({
               }`}
           >
             <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            {isSaving ? 'Saving...' : 'Save Roster'}
+            {isSaving ? 'Saving...' : 'Save Team'}
           </button>
         </div>
       </div>
@@ -94,7 +94,7 @@ export const BudgetBar = ({
         <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
           <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] flex items-center gap-1 ${isStartingComplete ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
             {isStartingComplete ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-            {startingCount}/11 Starting
+            {startingCount}/11 Starters
           </span>
 
           <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-950 text-slate-300 border border-slate-800 flex items-center gap-1">
@@ -104,7 +104,7 @@ export const BudgetBar = ({
 
           <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] flex items-center gap-1 ${hasCaptain ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-slate-800 text-slate-400'}`}>
             <Crown className="w-3 h-3" />
-            {hasCaptain ? 'Captain (C)' : 'No Captain'}
+            {hasCaptain ? 'Captain' : 'No Captain'}
           </span>
         </div>
 

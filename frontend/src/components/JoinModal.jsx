@@ -389,13 +389,13 @@ export const JoinModal = ({ isOpen, onClose }) => {
               {/* Team Name */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Your Fantasy Club Name
+                  Your Team Name
                 </label>
                 <input
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g. Galactic Strikers FC"
+                  placeholder="e.g. Thunder FC"
                   maxLength={40}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
                   required
@@ -405,7 +405,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
               {/* Formation Choice */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                  Initial Tactical Formation
+                  Formation
                 </label>
                 <div className="flex gap-2">
                   {['4-3-3', '3-5-2', '4-4-2', '3-4-3'].map((f) => (
@@ -413,7 +413,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                       key={f}
                       type="button"
                       onClick={() => setSelectedFormation(f)}
-                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         selectedFormation === f
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm'
                           : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
@@ -437,7 +437,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                 disabled={isSubmitting}
                 className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-2xl shadow-lg transition active:scale-95 text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>{isSubmitting ? 'Joining Season...' : 'Join Season & Pick Starting XI'}</span>
+                <span>{isSubmitting ? 'Joining...' : 'Join Season & Pick Team'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -446,16 +446,16 @@ export const JoinModal = ({ isOpen, onClose }) => {
           {/* TAB 2: CREATE A NEW CUSTOM SEASON */}
           {tab === 'create_season' && (
             <form onSubmit={handleCreateNewSeason} className="space-y-3.5">
-              {/* Arbitrary Season Name */}
+              {/* Season Name */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Arbitrary League / Season Name
+                  Season Name
                 </label>
                 <input
                   type="text"
                   value={newSeasonName}
                   onChange={(e) => handleSeasonNameChange(e.target.value)}
-                  placeholder="e.g. Sunday Champions League 2026"
+                  placeholder="e.g. Champions Cup 2026"
                   maxLength={60}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
                   required
@@ -497,12 +497,12 @@ export const JoinModal = ({ isOpen, onClose }) => {
                     Salary Cap ($M)
                   </label>
                   <div className="flex items-center gap-1">
-                    {[80, 100, 120].map((cap) => (
+                    {[80, 100, 120, 175].map((cap) => (
                       <button
                         key={cap}
                         type="button"
                         onClick={() => setNewSalaryCap(cap)}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition border ${
+                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition border cursor-pointer ${
                           newSalaryCap === cap
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
                             : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
@@ -518,7 +518,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                       max="300"
                       value={newSalaryCap}
                       onChange={(e) => setNewSalaryCap(e.target.value)}
-                      className="w-16 px-1.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white text-center focus:outline-none focus:border-emerald-400"
+                      className="w-14 px-1 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white text-center focus:outline-none focus:border-emerald-400"
                       required
                     />
                   </div>
@@ -528,7 +528,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
               {/* Founding Team Name */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Your Founding Club Name
+                  Your Team Name
                 </label>
                 <input
                   type="text"
@@ -544,7 +544,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
               {/* Initial Formation */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                  Starting Tactical Shape
+                  Formation
                 </label>
                 <div className="flex gap-2">
                   {['4-3-3', '3-5-2', '4-4-2'].map((f) => (
@@ -552,7 +552,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                       key={f}
                       type="button"
                       onClick={() => setSelectedFormation(f)}
-                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         selectedFormation === f
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm'
                           : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
@@ -576,7 +576,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                 disabled={isSubmitting}
                 className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-2xl shadow-lg transition active:scale-95 text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>{isSubmitting ? 'Launching Season...' : 'Launch Season & Create Team'}</span>
+                <span>{isSubmitting ? 'Creating...' : 'Create Season & Team'}</span>
                 <Sparkles className="w-4 h-4" />
               </button>
             </form>
@@ -587,7 +587,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
             <form onSubmit={handleLogin} className="space-y-3.5">
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Enter Your 6-Digit Manager PIN
+                  Enter 6-Digit Manager PIN
                 </label>
                 <input
                   type="text"
@@ -612,7 +612,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                 disabled={isSubmitting}
                 className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl border border-slate-700 shadow-lg transition active:scale-95 text-xs sm:text-sm cursor-pointer"
               >
-                {isSubmitting ? 'Logging In...' : 'Access My Team'}
+                {isSubmitting ? 'Logging In...' : 'Log In'}
               </button>
             </form>
           )}
@@ -652,7 +652,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-2xl shadow-lg transition active:scale-95 text-xs sm:text-sm cursor-pointer"
               >
-                Let's Build My Starting XI!
+                Pick My Team
               </button>
             </div>
           )}
