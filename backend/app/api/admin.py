@@ -60,3 +60,54 @@ async def trigger_recalculate_scores(db: aiosqlite.Connection = Depends(get_db))
     """Manually triggers the Scoring Engine."""
     result = await run_scoring_engine(db)
     return {"message": "Scoring engine executed", "result": result}
+
+@router.get("/api-status")
+async def check_external_api_status():
+    """Queries API-Sports /status to inspect real account status and API-side quota usage."""
+    if not settings.API_FOOTBALL_KEY:
+        return {"error": "API_FOOTBALL_KEY not configured"}
+    import httpx
+    headers = {
+        "x-rapidapi-host": "v3.football.api-sports.io",
+        "x-apisports-key": settings.API_FOOTBALL_KEY,
+        "x-rapidapi-key": settings.API_FOOTBALL_KEY,
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{settings.API_FOOTBALL_BASE_URL.rstrip('/')}/status", headers=headers)
+        return resp.json()
+
+@router.get("/logs")
+async def get_recent_api_logs(limit: int = 50, db: aiosqlite.Connection = Depends(get_db)):
+    """Returns recent API usage log entries from SQLite."""
+    cursor = await db.execute(
+        "SELECT id, date, endpoint, status_code, cost, created_at FROM api_usage_log ORDER BY id DESC LIMIT ?",
+        (limit,)
+    )
+    rows = await cursor.fetchall()
+    return [dict(r) for r in rows]
+
+@router.post("/reset-usage")
+async def reset_local_usage_log(db: aiosqlite.Connection = Depends(get_db)):
+    """Resets today's local usage counter in SQLite so new calls can be made."""
+    today_str = date.today().isoformat()
+    await db.execute("DELETE FROM api_usage_log WHERE date = ?", (today_str,))
+    await db.commit()
+    return {"message": f"Local API usage counter for {today_str} reset to 0."}
+
+@router.get("/probe-fixtures")
+async def probe_fixtures(league: int = 39, season: int = 2024):
+    """Directly probes API-Football fixtures to inspect available match data."""
+    if not settings.API_FOOTBALL_KEY:
+        return {"error": "API_FOOTBALL_KEY not configured"}
+    import httpx
+    headers = {
+        "x-apisports-key": settings.API_FOOTBALL_KEY,
+        "x-rapidapi-key": settings.API_FOOTBALL_KEY,
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{settings.API_FOOTBALL_BASE_URL.rstrip('/')}/fixtures",
+            params={"league": league, "season": season, "last": 5},
+            headers=headers
+        )
+        return resp.json()
