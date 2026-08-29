@@ -93,8 +93,8 @@ export const LiveEventsProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_URL || "";
-    const sseUrl = `${API_BASE}/api/events/live`;
+    const base = import.meta.env.VITE_API_URL ?? (window.location.pathname.startsWith('/beanleague') ? '/beanleague' : '');
+    const sseUrl = `${base}/api/events/live`;
     let eventSource = null;
     let reconnectTimeout = null;
 

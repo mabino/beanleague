@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL || "";
+// Determine API Base URL supporting root and /beanleague subpath automatically
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL !== undefined) {
+    return import.meta.env.VITE_API_URL;
+  }
+  return window.location.pathname.startsWith('/beanleague') ? '/beanleague' : '';
+};
+
+export const API_BASE = getApiBase();
 
 export const api = {
   async request(endpoint, options = {}) {
@@ -7,7 +15,8 @@ export const api = {
       ...options.headers,
     };
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const url = `${getApiBase()}${endpoint}`;
+    const res = await fetch(url, {
       ...options,
       headers,
     });

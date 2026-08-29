@@ -1,6 +1,6 @@
 # 🛠️ BeanLeague Setup & Installation Guide
 
-This guide walks you through setting up BeanLeague for local development, home server hosting, and production GitOps deployment.
+This guide walks you through setting up BeanLeague for local development, home server hosting at `binolabs.com/beanleague`, and production GitOps deployment.
 
 ---
 
@@ -48,7 +48,7 @@ docker compose ps
 curl http://localhost:8000/health
 ```
 
-Open `http://localhost:3000` (or `http://<your-server-ip>:3000`) in any browser or mobile device.
+Open `http://localhost:3000/beanleague/` in any browser or mobile device.
 
 ---
 
@@ -86,7 +86,7 @@ npm install
 npm run dev
 ```
 
-Frontend will be accessible at [http://localhost:5173](http://localhost:5173).
+Frontend will be accessible at [http://localhost:5173/beanleague/](http://localhost:5173/beanleague/).
 
 ---
 
@@ -117,40 +117,28 @@ sqlite3 /var/lib/docker/volumes/beanleague_data/_data/beanleague.db ".backup '/b
 
 ---
 
-## 🛡️ Reverse Proxy & SSL Configuration
+## 🛡️ Homelab Reverse Proxy Ingress (binolabs.com/beanleague)
 
-When serving BeanLeague over HTTPS via Nginx, Traefik, or Cloudflare Tunnels, ensure that **buffering is disabled** on `/api/events/live` so Server-Sent Events (SSE) stream smoothly to phones and tablets.
+When hosting under `binolabs.com/beanleague`, add this location block to your homelab `web/nginx.conf`:
 
-### Nginx Example
 ```nginx
-server {
-    listen 443 ssl http2;
-    server_name fantasy.yourdomain.com;
+        # BeanLeague — Login-less Fantasy Soccer Platform
+        location = /beanleague {
+            return 301 $scheme://$host/beanleague/;
+        }
+        location /beanleague/ {
+            set $upstream_beanleague_frontend beanleague-frontend;
+            proxy_pass http://$upstream_beanleague_frontend:80;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
 
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/privkey.pem;
-
-    # Frontend Single Page App
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # API & Live SSE Event Stream
-    location /api {
-        proxy_pass http://localhost:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        
-        # Disable buffering for live goal pulse toasts
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_read_timeout 86400s;
-        proxy_send_timeout 86400s;
-    }
-}
+            # Real-time SSE live score updates support
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 86400s;
+            proxy_send_timeout 86400s;
+            chunked_transfer_encoding on;
+        }
 ```

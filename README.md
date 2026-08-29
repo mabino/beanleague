@@ -1,6 +1,6 @@
 # ⚽ BeanLeague
 
-A high-performance, login-less fantasy soccer web application designed for a 12-year-old and their friends. BeanLeague eliminates friction with 6-digit Manager PINs, features a visual tactical Pitch View with drag-and-drop squad builder, operates within API-Football's 100 requests/day free tier limit via local SQLite caching, runs an asynchronous scoring engine, and provides live Server-Sent Events (SSE) match day pulsing.
+A high-performance, login-less fantasy soccer web application designed for a 12-year-old and their friends, hosted on your homelab at **`binolabs.com/beanleague`**. BeanLeague eliminates friction with 6-digit Manager PINs, features a visual tactical Pitch View with drag-and-drop squad builder, operates within API-Football's 100 requests/day free tier limit via local SQLite caching, runs an asynchronous scoring engine, and provides live Server-Sent Events (SSE) match day pulsing.
 
 ---
 
@@ -8,8 +8,8 @@ A high-performance, login-less fantasy soccer web application designed for a 12-
 
 - 🛠️ [**Setup & Installation Guide**](file:///Users/mabino/Downloads/beanleague/docs/SETUP.md): Local development, Docker Compose deployment, reverse proxy setup, and persistent database storage.
 - 📡 [**Data Sources & API-Football Guide**](file:///Users/mabino/Downloads/beanleague/docs/API_AND_DATA_SOURCES.md): API-Football key configuration, 100 requests/day rate limit economics, supported league IDs, and offline mock simulation.
-- 🔐 [**GitOps, Secrets & Azure Ingress**](file:///Users/mabino/Downloads/beanleague/docs/GITOPS_AND_SECRETS.md): Required repository secrets, `../homelab` git submodule integration, and Azure DNS routing automation.
-- 📄 [**Environment Template**](file:///Users/mabino/Downloads/beanleague/.env.example): Exhaustive reference of all environment variables.
+- 🔐 [**Homelab GitOps & Secrets Guide**](file:///Users/mabino/Downloads/beanleague/docs/GITOPS_AND_SECRETS.md): Required environment variables, `../homelab` git submodule integration, and `binolabs.com/beanleague` Nginx ingress configuration.
+- 📄 [**Environment Template**](file:///Users/mabino/Downloads/beanleague/.env.example): Reference of all environment variables.
 
 ---
 
@@ -27,7 +27,7 @@ A high-performance, login-less fantasy soccer web application designed for a 12-
 - 📡 **Live Match Pulse & SSE**: Server-Sent Events stream live match events with animated green pulses, goal celebration fanfare, and confetti.
 - 🔭 **Scout Mode**: Kids can click on any friend's team in the leaderboard to inspect their starting lineup on a visual pitch.
 - 🎮 **Live Matchday Simulator**: Integrated simulation controls for dev/parent testing of live goals, assists, and scoring engine recalculations without waiting for weekend fixtures.
-- 🚀 **Homelab & Azure GitOps Ready**: Containerized with Docker Compose, complete with macOS zsh scripts for Azure DNS ingress management and GitOps submodule integration with `../homelab`.
+- 🚀 **Homelab GitOps Ready**: Containerized with Docker Compose, hosted seamlessly at `binolabs.com/beanleague`, with ready-to-use submodule and Nginx ingress configs.
 
 ---
 
@@ -46,7 +46,7 @@ SQLite Database (WAL mode, persistent volume)
 FastAPI Backend (REST API + Scoring Engine + SSE Broadcasting)
        ▲
        │
-Nginx Reverse Proxy / Homelab Ingress (SSL Termination)
+Homelab Gateway / Nginx (SSL Termination @ binolabs.com/beanleague)
        ▲
        │
 React 18 / Vite Frontend (Pitch View, Transfer Market, Live Standings)
@@ -98,7 +98,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+Open `http://localhost:5173/beanleague/` in your browser.
 
 ---
 
@@ -110,7 +110,7 @@ Run the entire stack (Frontend, Backend, Persistent SQLite Storage) in Docker:
 docker compose up -d --build
 ```
 
-Access the web app at `http://localhost:3000`.
+Access the web app at `http://localhost:3000/beanleague/`.
 
 ---
 
@@ -128,22 +128,7 @@ Access the web app at `http://localhost:3000`.
 
 ---
 
-## ☁️ Azure DNS & Homelab Ingress
-
-BeanLeague includes native macOS zsh scripts for managing Azure DNS routing to your homelab tunnel:
-
-```bash
-# Deploy Azure DNS Zone & Record
-./scripts/deploy-azure-dns.zsh <YOUR_HOMELAB_INGRESS_IP_OR_TUNNEL>
-
-# Update DNS record
-./scripts/update-azure-dns.zsh <NEW_IP> A
-
-# Teardown Azure DNS
-./scripts/teardown-azure-dns.zsh
-```
-
-### Homelab GitOps Submodule Setup
+## 🔄 Homelab GitOps Submodule Setup
 
 To add BeanLeague to your `../homelab` GitOps repo:
 

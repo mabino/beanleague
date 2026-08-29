@@ -53,7 +53,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount API Routers
+# Mount API Routers at root
 app.include_router(leagues.router)
 app.include_router(teams.router)
 app.include_router(players.router)
@@ -61,17 +61,29 @@ app.include_router(fixtures.router)
 app.include_router(live.router)
 app.include_router(admin.router)
 
+# Mount API Routers at /beanleague subpath for reverse proxy routing
+app.include_router(leagues.router, prefix="/beanleague")
+app.include_router(teams.router, prefix="/beanleague")
+app.include_router(players.router, prefix="/beanleague")
+app.include_router(fixtures.router, prefix="/beanleague")
+app.include_router(live.router, prefix="/beanleague")
+app.include_router(admin.router, prefix="/beanleague")
+
 @app.get("/")
+@app.get("/beanleague")
+@app.get("/beanleague/")
 async def root():
     return {
         "app": "BeanLeague",
         "version": "1.0.0",
         "description": "High-Performance Login-Less Fantasy Soccer API",
         "status": "healthy",
-        "docs_url": "/docs"
+        "docs_url": "/docs",
+        "subpath_docs_url": "/beanleague/docs"
     }
 
 @app.get("/health")
+@app.get("/beanleague/health")
 async def health_check():
     return {"status": "healthy"}
 

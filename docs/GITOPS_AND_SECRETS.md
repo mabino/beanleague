@@ -1,55 +1,48 @@
-# 🔐 GitOps, Secrets & Deployment Guide
+# 🔐 Homelab GitOps & Secrets Guide
 
-This guide details the repository secrets, environment variables, Azure DNS routing, and GitOps submodule integration with `../homelab`.
+This guide details how BeanLeague is hosted as a submodule under `binolabs.com/beanleague` and managed via GitOps in `../homelab`.
 
 ---
 
-## 🔑 Required Repository Secrets & Variables
+## 🌐 Ingress URL & Routing
 
-When deploying BeanLeague via GitHub Actions, Azure, or Homelab GitOps, configure the following secrets:
+- **Public Web App**: `https://binolabs.com/beanleague`
+- **Internal API**: `https://binolabs.com/beanleague/api`
+- **Live SSE Event Stream**: `https://binolabs.com/beanleague/api/events/live`
 
-### 1. External Data Sources & Runtime Secrets
+---
 
-| Secret / Env Var | Required? | Description | Example Value |
+## 🔑 Environment Variables & Secrets
+
+BeanLeague requires minimal secrets:
+
+| Variable | Required? | Description | Example Value |
 |---|---|---|---|
-| `API_FOOTBALL_KEY` | Optional | API Key from API-Football. If omitted, app runs in Mock Mode. | `e8f92a10b4c73...` |
+| `API_FOOTBALL_KEY` | Optional | API Key from API-Football. If omitted, app runs in Curated Mock Mode. | `e8f92a10b4c73...` |
 | `API_DAILY_LIMIT` | Optional | Max external API requests allowed per day (Default: `100`). | `100` |
 | `DEFAULT_SEASON_CODE` | Optional | Default room code for league bootstrap. | `BARCA-2026` |
 | `DEFAULT_SALARY_CAP` | Optional | Starting salary cap in millions of dollars. | `100.0` |
 
-### 2. Azure DNS & Ingress Secrets (for Homelab External Access)
-
-| Secret / Env Var | Required? | Description | Example Value |
-|---|---|---|---|
-| `AZURE_CREDENTIALS` | For CI/CD | Azure Service Principal JSON for GitHub Actions. | `{"clientId": "...", "clientSecret": "..."}` |
-| `AZURE_RESOURCE_GROUP` | Optional | Resource Group containing your Azure DNS Zone. | `rg-homelab-dns` |
-| `AZURE_DNS_ZONE` | Optional | Custom domain managed in Azure DNS. | `bino-fantasy.com` |
-| `HOMELAB_INGRESS_IP` | Optional | Public IP or Gateway IP for Azure DNS A record. | `198.51.100.42` |
-
 ---
 
-## 🔄 Homelab GitOps Integration
+## 🔄 Homelab Submodule & Ingress Setup
 
-BeanLeague is designed to deploy as a git submodule inside your main `../homelab` infrastructure repository.
+### 1. Register Submodule in `../homelab`
 
-### Step 1: Register as a Git Submodule
-
-Run the provided setup script from the BeanLeague directory:
+Run the setup script:
 
 ```bash
 ./deploy/homelab-submodule-setup.sh ../homelab
 ```
 
-Or manually inside `../homelab`:
+Or manually:
 ```bash
 cd ../homelab
 git submodule add https://github.com/mabino/beanleague.git web/beanleague
 git submodule update --init --recursive
 ```
 
-### Step 2: Add Service to Homelab `docker-compose.yml`
-
-Add the BeanLeague service block to `../homelab/docker-compose.yml`:
+### 2. Service Definition in `../homelab/docker-compose.yml`
 
 ```yaml
   beanleague-backend:
@@ -84,30 +77,31 @@ volumes:
     name: beanleague_data
 ```
 
-### Step 3: Route Traffic via Homelab Reverse Proxy
+### 3. Nginx Subpath Location Block in `../homelab/web/nginx.conf`
 
-Include the ingress rules from [`deploy/homelab-ingress.conf`](file:///Users/mabino/Downloads/beanleague/deploy/homelab-ingress.conf) into your homelab Nginx or reverse proxy configuration (`../homelab/web/nginx.conf`).
+Add inside the `server { server_name binolabs.com www.binolabs.com; ... }` block:
 
----
+```nginx
+        # BeanLeague — Login-less Fantasy Soccer Platform
+        location = /beanleague {
+            return 301 $scheme://$host/beanleague/;
+        }
+        location /beanleague/ {
+            set $upstream_beanleague_frontend beanleague-frontend;
+            proxy_pass http://$upstream_beanleague_frontend:80;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
 
-## ☁️ Azure DNS & Tunnel Automation
-
-To allow friends to access the web app from their phones without opening local router ports:
-
-1. **Deploy DNS Zone**:
-   ```bash
-   ./scripts/deploy-azure-dns.zsh <HOMELAB_IP_OR_TUNNEL_ENDPOINT>
-   ```
-
-2. **Update DNS Records**:
-   ```bash
-   ./scripts/update-azure-dns.zsh <NEW_IP> A
-   ```
-
-3. **Teardown DNS Resources**:
-   ```bash
-   ./scripts/teardown-azure-dns.zsh
-   ```
+            # Real-time Server-Sent Events (SSE) support
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 86400s;
+            proxy_send_timeout 86400s;
+            chunked_transfer_encoding on;
+        }
+```
 
 ---
 
