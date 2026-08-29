@@ -34,7 +34,14 @@ async def list_fixtures(
            home_score, away_score
     FROM fixtures
     {where_clause}
-    ORDER BY kickoff_time ASC
+    ORDER BY 
+        CASE 
+            WHEN status = 'In-Play' THEN 1
+            WHEN DATE(kickoff_time) = DATE('now') THEN 2
+            WHEN status = 'Scheduled' THEN 3
+            ELSE 4 
+        END ASC,
+        kickoff_time DESC
     """
     cursor = await db.execute(query, params)
     rows = await cursor.fetchall()

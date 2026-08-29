@@ -22,13 +22,22 @@ export const MatchTicker = () => {
 
   if (fixtures.length === 0) return null;
 
+  const hasLiveMatches = fixtures.some((f) => f.status === 'In-Play');
+
   return (
     <div className="w-full bg-slate-950/80 border-y border-slate-800/80 py-2.5 px-4 overflow-x-auto scrollbar-none">
       <div className="flex items-center gap-4 max-w-7xl mx-auto min-w-max">
-        <div className="flex items-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-widest pl-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span>MATCHDAY LIVE:</span>
-        </div>
+        {hasLiveMatches ? (
+          <div className="flex items-center gap-1.5 text-xs font-black text-rose-400 uppercase tracking-widest pl-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+            <span>MATCHDAY LIVE:</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs font-black text-slate-400 uppercase tracking-widest pl-2">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span>MATCHDAY FIXTURES:</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           {fixtures.map((fix) => {
