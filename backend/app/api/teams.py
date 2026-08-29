@@ -1,10 +1,13 @@
 import aiosqlite
 import json
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from typing import Dict, Any, List, Optional
 from ..database import get_db
-from ..auth import generate_manager_code, normalize_pin, get_current_team
+from ..auth import (
+    generate_manager_code, normalize_pin, get_current_team,
+    check_login_rate_limit, record_failed_login, clear_failed_logins, get_client_ip
+)
 from ..models import (
     TeamCreate, TeamJoinResponse, TeamLoginRequest, TeamRosterSaveRequest,
     TeamRosterResponse, TeamRecoveryRequest, TeamRecoveryResponse,
@@ -148,10 +151,18 @@ async def recover_team_code(req: TeamRecoveryRequest, db: aiosqlite.Connection =
     )
 
 @router.post("/login", response_model=TeamJoinResponse)
-async def login_team(req: TeamLoginRequest, db: aiosqlite.Connection = Depends(get_db)):
+async def login_team(req: TeamLoginRequest, request: Request, db: aiosqlite.Connection = Depends(get_db)):
     """
     Login-less PIN auth: Authenticates an existing manager via 6-digit PIN.
+    Includes IP-based rate limiting to protect against brute-force harvesting.
     """
+    client_ip = get_client_ip(request)
+    if not check_login_rate_limit(client_ip, max_attempts=15, window_secs=60):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Please wait 60 seconds before trying again."
+        )
+
     clean_code = normalize_pin(req.manager_code)
     cursor = await db.execute(
         """
@@ -165,10 +176,13 @@ async def login_team(req: TeamLoginRequest, db: aiosqlite.Connection = Depends(g
     )
     row = await cursor.fetchone()
     if not row:
+        record_failed_login(client_ip)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No team found with Manager Code '{clean_code}'. Please check your PIN."
         )
+
+    clear_failed_logins(client_ip)
 
     kit = None
     if row["kit_config"]:
@@ -292,13 +306,32 @@ async def update_player_media(
             detail="Maximum of 3 YouTube videos allowed per player profile."
         )
 
-    # Convert to json
-    links_data = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in media_req.youtube_links]
-    links_json = json.dumps(links_data)
+    import html
+    import re
+    yt_regex = re.compile(r"^[a-zA-Z0-9_-]{11}$")
+
+    validated_links = []
+    for item in media_req.youtube_links:
+        v_id = item.video_id.strip()
+        if not yt_regex.match(v_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid YouTube video ID format: '{v_id}'."
+            )
+        safe_url = f"https://www.youtube.com/watch?v={v_id}"
+        safe_title = html.escape(item.title.strip()) if item.title else f"Highlight Reel {len(validated_links)+1}"
+        validated_links.append({
+            "video_id": v_id,
+            "url": safe_url,
+            "title": safe_title
+        })
+
+    sanitized_notes = html.escape(media_req.custom_notes.strip()) if media_req.custom_notes else ""
+    links_json = json.dumps(validated_links)
     
     cursor = await db.execute(
         "UPDATE rosters SET youtube_links = ?, custom_notes = ? WHERE team_id = ? AND player_id = ?",
-        (links_json, media_req.custom_notes, team_id, player_id)
+        (links_json, sanitized_notes, team_id, player_id)
     )
     if cursor.rowcount == 0:
         raise HTTPException(
@@ -306,7 +339,7 @@ async def update_player_media(
             detail="Player not found in your team roster."
         )
     await db.commit()
-    return {"status": "success", "youtube_links": links_data, "custom_notes": media_req.custom_notes}
+    return {"status": "success", "youtube_links": validated_links, "custom_notes": sanitized_notes}
 
 @router.put("/me/roster")
 async def save_my_roster(

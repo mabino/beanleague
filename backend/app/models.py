@@ -3,10 +3,10 @@ from pydantic import BaseModel, Field
 
 # --- League Models ---
 class LeagueCreate(BaseModel):
-    season_code: str = Field(..., json_schema_extra={"example": "BARCA-2026"}, description="Unique code defining the league context")
-    name: str = Field(..., json_schema_extra={"example": "FC Barcelona & Friends League"})
+    season_code: str = Field(..., min_length=2, max_length=20, pattern=r"^[A-Za-z0-9_-]{2,20}$", json_schema_extra={"example": "BARCA-2026"}, description="Unique alphanumeric code defining the league context")
+    name: str = Field(..., min_length=2, max_length=60, json_schema_extra={"example": "FC Barcelona & Friends League"})
     max_teams: int = Field(16, ge=2, le=50)
-    salary_cap: float = Field(100.0, ge=50.0, le=200.0)
+    salary_cap: float = Field(100.0, ge=50.0, le=300.0)
 
 class LeagueResponse(BaseModel):
     id: str
@@ -24,26 +24,26 @@ class KitConfig(BaseModel):
     badge_icon: str = "shield"  # shield, crown, lightning, flame, dragon, star, lion, skull, falcon
 
 class PlayerMediaItem(BaseModel):
-    url: str
-    video_id: str
-    title: Optional[str] = None
+    url: str = Field(..., max_length=250)
+    video_id: str = Field(..., min_length=11, max_length=11, pattern=r"^[a-zA-Z0-9_-]{11}$", description="Valid 11-char YouTube Video ID")
+    title: Optional[str] = Field(None, max_length=100)
 
 class PlayerMediaSaveRequest(BaseModel):
-    youtube_links: List[PlayerMediaItem] = []
-    custom_notes: Optional[str] = None
+    youtube_links: List[PlayerMediaItem] = Field(default_factory=list, max_length=3)
+    custom_notes: Optional[str] = Field(None, max_length=500)
 
 class TeamKitUpdateRequest(BaseModel):
     kit_config: Dict[str, Any]
 
 class TeamCreate(BaseModel):
-    season_code: str = Field(..., json_schema_extra={"example": "BARCA-2026"})
-    team_name: str = Field(..., min_length=2, max_length=30, json_schema_extra={"example": "Lightning Strikers"})
+    season_code: str = Field(..., min_length=2, max_length=20, pattern=r"^[A-Za-z0-9_-]{2,20}$", json_schema_extra={"example": "BARCA-2026"})
+    team_name: str = Field(..., min_length=2, max_length=40, json_schema_extra={"example": "Lightning Strikers"})
     formation: str = Field("4-3-3", json_schema_extra={"example": "4-3-3"})
     kit_config: Optional[Dict[str, Any]] = None
     recovery_player_1_id: Optional[int] = Field(None, description="First security player ID")
     recovery_player_2_id: Optional[int] = Field(None, description="Second security player ID")
     recovery_player_3_id: Optional[int] = Field(None, description="Third security player ID")
-    secret_word: Optional[str] = Field(None, description="Secret word for code recovery")
+    secret_word: Optional[str] = Field(None, max_length=50, description="Secret word for code recovery")
 
 class TeamRecoveryRequest(BaseModel):
     season_code: str = Field(..., json_schema_extra={"example": "BARCA-2026"})

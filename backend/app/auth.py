@@ -1,8 +1,36 @@
+import time
+from collections import defaultdict
 import random
 import aiosqlite
-from fastapi import Header, HTTPException, Depends, status
+from fastapi import Header, HTTPException, Depends, Request, status
 from typing import Optional, Dict, Any
 from .database import get_db
+
+# Failed login attempt tracker: client_ip -> list of timestamps
+_FAILED_LOGINS: Dict[str, list] = defaultdict(list)
+
+def check_login_rate_limit(client_ip: str, max_attempts: int = 10, window_secs: int = 60) -> bool:
+    """Returns True if within rate limit, False if brute-force threshold exceeded."""
+    now = time.time()
+    attempts = [t for t in _FAILED_LOGINS[client_ip] if now - t < window_secs]
+    _FAILED_LOGINS[client_ip] = attempts
+    return len(attempts) < max_attempts
+
+def record_failed_login(client_ip: str):
+    """Records a failed PIN attempt."""
+    _FAILED_LOGINS[client_ip].append(time.time())
+
+def clear_failed_logins(client_ip: str):
+    """Resets rate limit counter on successful login."""
+    if client_ip in _FAILED_LOGINS:
+        del _FAILED_LOGINS[client_ip]
+
+def get_client_ip(request: Request) -> str:
+    """Extracts client IP address respecting reverse proxies."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "127.0.0.1"
 
 def generate_manager_code() -> str:
     """Generates a memorable 6-digit Manager PIN (e.g. 849-201)."""

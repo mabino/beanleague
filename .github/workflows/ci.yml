@@ -1,19 +1,32 @@
-name: CI Test Suite
+name: BeanLeague CI Test & Build Verification
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
-  test:
-    name: Run Containerized Test Suite
+  backend-tests:
+    name: Backend Pytest Suite & Security Verification
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Test Suite in Docker Container
-        run: ./scripts/run-tests.sh docker
+      - name: Run Backend Pytest Suite (Dockerized)
+        run: |
+          docker run --rm -v "$PWD/backend:/app" -w /app python:3.12-slim \
+            sh -c "pip install -q -r requirements-dev.txt && pytest tests/ -q"
+
+  frontend-build:
+    name: Frontend Vite Production Build & Asset Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Frontend Build Verification (Dockerized)
+        run: |
+          docker run --rm -v "$PWD/frontend:/app" -w /app node:20-alpine \
+            sh -c "npm run build"

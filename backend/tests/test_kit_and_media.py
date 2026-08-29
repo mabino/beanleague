@@ -107,4 +107,4 @@ async def test_custom_kit_and_player_media(client):
             ]
         }
     )
-    assert excess_media.status_code == 400
+    assert excess_media.status_code in (400, 422)

@@ -12,6 +12,8 @@ from ..pipeline.poller import run_matchday_poller, simulate_live_tick
 from ..pipeline.scoring import run_scoring_engine
 from ..models import ApiUsageSummary
 
+import hmac
+
 logger = logging.getLogger("beanleague.admin")
 
 router = APIRouter(tags=["Admin, Pipeline & System Status"])
@@ -19,9 +21,10 @@ router = APIRouter(tags=["Admin, Pipeline & System Status"])
 def verify_admin_pin(x_admin_pin: Optional[str] = Header(None, alias="X-Admin-PIN")):
     """
     Security guard: enforces that admin endpoints require the valid Admin PIN.
+    Uses timing-safe comparison to prevent side-channel timing attacks.
     """
     expected_pin = settings.ADMIN_PIN.strip()
-    if not x_admin_pin or x_admin_pin.strip() != expected_pin:
+    if not x_admin_pin or not hmac.compare_digest(x_admin_pin.strip(), expected_pin):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing Admin Security PIN."
