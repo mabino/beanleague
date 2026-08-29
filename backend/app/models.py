@@ -21,6 +21,25 @@ class TeamCreate(BaseModel):
     season_code: str = Field(..., json_schema_extra={"example": "BARCA-2026"})
     team_name: str = Field(..., min_length=2, max_length=30, json_schema_extra={"example": "Lightning Strikers"})
     formation: str = Field("4-3-3", json_schema_extra={"example": "4-3-3"})
+    recovery_player_1_id: Optional[int] = Field(None, description="First security player ID")
+    recovery_player_2_id: Optional[int] = Field(None, description="Second security player ID")
+    recovery_player_3_id: Optional[int] = Field(None, description="Third security player ID")
+    secret_word: Optional[str] = Field(None, description="Secret word for code recovery")
+
+class TeamRecoveryRequest(BaseModel):
+    season_code: str = Field(..., json_schema_extra={"example": "BARCA-2026"})
+    player_1_id: int = Field(..., description="First security player ID selected during setup")
+    player_2_id: int = Field(..., description="Second security player ID selected during setup")
+    player_3_id: int = Field(..., description="Third security player ID selected during setup")
+    secret_word: str = Field(..., min_length=2, description="Secret word selected during setup")
+
+class TeamRecoveryResponse(BaseModel):
+    success: bool
+    manager_code: str
+    team_name: str
+    league_name: str
+    season_code: str
+    message: str
 
 class TeamJoinResponse(BaseModel):
     id: str

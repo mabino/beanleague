@@ -210,6 +210,49 @@ async def resolve_player_photo(
     
     return svg_path
 
+async def run_photo_audit_and_sync(db: aiosqlite.Connection) -> Dict[str, Any]:
+    """
+    Periodic photo audit & sync:
+    Checks if all players in the database have a fresh cached profile picture on disk.
+    If all photos are present, EXITS IMMEDIATELY (zero network requests, zero overhead).
+    If new/unpopulated players are found, politely resolves them with rate pacing.
+    """
+    cursor = await db.execute("SELECT id, name, real_team_name, position, photo_url FROM players ORDER BY current_price DESC")
+    players = await cursor.fetchall()
+    
+    missing = []
+    for p in players:
+        webp_path = PHOTOS_DIR / f"{p['id']}.webp"
+        svg_path = PHOTOS_DIR / f"{p['id']}.svg"
+        has_webp = webp_path.exists() and webp_path.stat().st_size > 100
+        has_svg = svg_path.exists() and svg_path.stat().st_size > 50
+        if not has_webp and not has_svg:
+            missing.append(p)
+            
+    if not missing:
+        logger.info(f"Photo Scraper Audit: All {len(players)} players have fresh cached images. Exiting immediately with 0 network calls.")
+        return {"status": "fresh", "total_players": len(players), "missing_count": 0, "processed_count": 0}
+
+    logger.info(f"Photo Scraper Audit: Found {len(missing)} of {len(players)} players missing images. Lazily resolving with polite pacing...")
+    processed = 0
+    for p in missing:
+        try:
+            await resolve_player_photo(
+                player_id=p["id"],
+                player_name=p["name"],
+                real_team_name=p["real_team_name"] or "",
+                position=p["position"] or "FWD",
+                existing_url=p["photo_url"],
+                db=db
+            )
+            processed += 1
+            await asyncio.sleep(random.uniform(2.5, 3.5))
+        except Exception as e:
+            logger.warning(f"Failed to resolve photo for {p['name']}: {e}")
+
+    logger.info(f"Photo Scraper Audit: Completed processing {processed} players.")
+    return {"status": "completed", "total_players": len(players), "missing_count": len(missing), "processed_count": processed}
+
 class BackgroundPhotoWorker:
     """Polite, low-bandwidth background photo populator sidecar."""
     _running: bool = False
@@ -232,33 +275,11 @@ class BackgroundPhotoWorker:
     async def _worker_loop(cls):
         while cls._running:
             try:
-                # Find players without a local cached photo
                 async with aiosqlite.connect(settings.DATABASE_PATH) as db:
                     db.row_factory = aiosqlite.Row
-                    cursor = await db.execute("SELECT id, name, real_team_name, position, photo_url FROM players ORDER BY current_price DESC")
-                    players = await cursor.fetchall()
+                    await run_photo_audit_and_sync(db)
 
-                    for p in players:
-                        if not cls._running:
-                            break
-                        
-                        webp_path = PHOTOS_DIR / f"{p['id']}.webp"
-                        svg_path = PHOTOS_DIR / f"{p['id']}.svg"
-
-                        if not webp_path.exists():
-                            logger.info(f"Lazily scraping photo for: {p['name']} ({p['real_team_name']})...")
-                            await resolve_player_photo(
-                                player_id=p["id"],
-                                player_name=p["name"],
-                                real_team_name=p["real_team_name"] or "",
-                                position=p["position"] or "FWD",
-                                existing_url=p["photo_url"],
-                                db=db
-                            )
-                            # Polite pacing: 2.5 to 4.0 second sleep between scrapes
-                            await asyncio.sleep(random.uniform(2.5, 4.0))
-
-                # Sleep 2 hours before scanning for new players again
+                # Sleep 2 hours before periodic check
                 await asyncio.sleep(7200)
             except asyncio.CancelledError:
                 break

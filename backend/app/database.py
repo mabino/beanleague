@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS teams (
     team_name TEXT NOT NULL,
     formation TEXT NOT NULL DEFAULT '4-3-3',
     total_points INTEGER NOT NULL DEFAULT 0,
+    recovery_player_1_id INTEGER,
+    recovery_player_2_id INTEGER,
+    recovery_player_3_id INTEGER,
+    recovery_word TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (league_id) REFERENCES leagues(id) ON DELETE CASCADE
 );
@@ -142,6 +146,19 @@ async def init_db(db_path: str = None):
     logger.info(f"Initializing database at: {target_path}")
     async with aiosqlite.connect(target_path) as db:
         await db.executescript(SCHEMA_SQL)
+        
+        # Defensive schema migrations for existing databases
+        cursor = await db.execute("PRAGMA table_info(teams)")
+        existing_cols = [row[1] for row in await cursor.fetchall()]
+        if "recovery_player_1_id" not in existing_cols:
+            await db.execute("ALTER TABLE teams ADD COLUMN recovery_player_1_id INTEGER;")
+        if "recovery_player_2_id" not in existing_cols:
+            await db.execute("ALTER TABLE teams ADD COLUMN recovery_player_2_id INTEGER;")
+        if "recovery_player_3_id" not in existing_cols:
+            await db.execute("ALTER TABLE teams ADD COLUMN recovery_player_3_id INTEGER;")
+        if "recovery_word" not in existing_cols:
+            await db.execute("ALTER TABLE teams ADD COLUMN recovery_word TEXT;")
+
         await db.commit()
     logger.info("Database schema initialized successfully.")
 

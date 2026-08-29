@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any, List
 from ..database import get_db
 from ..auth import generate_manager_code, normalize_pin, get_current_team
-from ..models import TeamCreate, TeamJoinResponse, TeamLoginRequest, TeamRosterSaveRequest, TeamRosterResponse
+from ..models import (
+    TeamCreate, TeamJoinResponse, TeamLoginRequest, TeamRosterSaveRequest,
+    TeamRosterResponse, TeamRecoveryRequest, TeamRecoveryResponse
+)
 from ..rules import validate_roster, calculate_fantasy_points
 from ..pipeline.scoring import run_scoring_engine
 
@@ -49,9 +52,27 @@ async def create_team(team_in: TeamCreate, db: aiosqlite.Connection = Depends(ge
     if not manager_code:
         manager_code = f"849-{uuid.uuid4().hex[:3]}"
 
+    recovery_word = team_in.secret_word.strip().lower() if team_in.secret_word else None
+
     await db.execute(
-        "INSERT INTO teams (id, league_id, manager_code, team_name, formation, total_points) VALUES (?, ?, ?, ?, ?, 0)",
-        (team_id, league["id"], manager_code, team_in.team_name.strip(), team_in.formation)
+        """
+        INSERT INTO teams (
+            id, league_id, manager_code, team_name, formation, total_points,
+            recovery_player_1_id, recovery_player_2_id, recovery_player_3_id, recovery_word
+        )
+        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+        """,
+        (
+            team_id,
+            league["id"],
+            manager_code,
+            team_in.team_name.strip(),
+            team_in.formation,
+            team_in.recovery_player_1_id,
+            team_in.recovery_player_2_id,
+            team_in.recovery_player_3_id,
+            recovery_word
+        )
     )
     await db.commit()
 
@@ -64,6 +85,47 @@ async def create_team(team_in: TeamCreate, db: aiosqlite.Connection = Depends(ge
         manager_code=manager_code,
         formation=team_in.formation,
         total_points=0
+    )
+
+@router.post("/recover", response_model=TeamRecoveryResponse)
+async def recover_manager_code(req: TeamRecoveryRequest, db: aiosqlite.Connection = Depends(get_db)):
+    """
+    Kid-friendly Manager Code Recovery:
+    Recovers the 6-digit PIN by providing the 3 chosen security players in exact order
+    plus the secret word.
+    """
+    season_code = req.season_code.strip().upper()
+    secret_word = req.secret_word.strip().lower()
+
+    # Find team in the league matching the 3 players and secret word
+    query = """
+    SELECT t.id, t.manager_code, t.team_name, l.name as league_name, l.season_code
+    FROM teams t
+    JOIN leagues l ON t.league_id = l.id
+    WHERE l.season_code = ?
+      AND t.recovery_player_1_id = ?
+      AND t.recovery_player_2_id = ?
+      AND t.recovery_player_3_id = ?
+      AND LOWER(TRIM(COALESCE(t.recovery_word, ''))) = ?
+    """
+    cursor = await db.execute(
+        query,
+        (season_code, req.player_1_id, req.player_2_id, req.player_3_id, secret_word)
+    )
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No team matched that combination. Please check your 3 players in their exact order and your secret word."
+        )
+
+    return TeamRecoveryResponse(
+        success=True,
+        manager_code=row["manager_code"],
+        team_name=row["team_name"],
+        league_name=row["league_name"],
+        season_code=row["season_code"],
+        message=f"Success! Welcome back, Manager {row['team_name']}."
     )
 
 @router.post("/login", response_model=TeamJoinResponse)

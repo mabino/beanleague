@@ -41,10 +41,18 @@ export const api = {
   },
 
   // Team & Auth
-  createTeam(seasonCode, teamName, formation = "4-3-3") {
+  createTeam(seasonCode, teamName, formation = "4-3-3", recoveryPlayer1Id = null, recoveryPlayer2Id = null, recoveryPlayer3Id = null, secretWord = "") {
     return this.request("/api/teams", {
       method: "POST",
-      body: JSON.stringify({ season_code: seasonCode, team_name: teamName, formation }),
+      body: JSON.stringify({
+        season_code: seasonCode,
+        team_name: teamName,
+        formation,
+        recovery_player_1_id: recoveryPlayer1Id,
+        recovery_player_2_id: recoveryPlayer2Id,
+        recovery_player_3_id: recoveryPlayer3Id,
+        secret_word: secretWord
+      }),
     });
   },
 
@@ -52,6 +60,19 @@ export const api = {
     return this.request("/api/teams/login", {
       method: "POST",
       body: JSON.stringify({ manager_code: managerCode }),
+    });
+  },
+
+  recoverTeam(seasonCode, player1Id, player2Id, player3Id, secretWord) {
+    return this.request("/api/teams/recover", {
+      method: "POST",
+      body: JSON.stringify({
+        season_code: seasonCode,
+        player_1_id: player1Id,
+        player_2_id: player2Id,
+        player_3_id: player3Id,
+        secret_word: secretWord,
+      }),
     });
   },
 

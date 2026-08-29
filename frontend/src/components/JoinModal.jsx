@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { KeyRound, Shield, Trophy, Copy, Check, ArrowRight, Sparkles, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { KeyRound, Shield, Trophy, Copy, Check, ArrowRight, Sparkles, X, Lock, RefreshCw, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api/client';
 
 export const JoinModal = ({ isOpen, onClose }) => {
-  const { login, joinLeague, authError } = useAuth();
-  const [tab, setTab] = useState('create'); // 'create' | 'login' | 'pin_success'
+  const { login, joinLeague, recoverTeam, authError } = useAuth();
+  const [tab, setTab] = useState('create'); // 'create' | 'login' | 'recover' | 'pin_success'
   const [seasonCode, setSeasonCode] = useState('BARCA-2026');
   const [teamName, setTeamName] = useState('');
   const [managerPin, setManagerPin] = useState('');
@@ -12,6 +13,36 @@ export const JoinModal = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState(null);
+
+  // Recovery Questions state
+  const [playersList, setPlayersList] = useState([]);
+  const [showSecuritySetup, setShowSecuritySetup] = useState(true);
+  const [recoveryP1, setRecoveryP1] = useState('');
+  const [recoveryP2, setRecoveryP2] = useState('');
+  const [recoveryP3, setRecoveryP3] = useState('');
+  const [secretWord, setSecretWord] = useState('');
+
+  // Recover Tab State
+  const [recoverSeason, setRecoverSeason] = useState('BARCA-2026');
+  const [recoverP1, setRecoverP1] = useState('');
+  const [recoverP2, setRecoverP2] = useState('');
+  const [recoverP3, setRecoverP3] = useState('');
+  const [recoverWord, setRecoverWord] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      api.getPlayers({ limit: 80, sort_by: 'price_desc' })
+        .then((data) => {
+          setPlayersList(data || []);
+          if (data && data.length >= 3 && !recoveryP1) {
+            setRecoveryP1(data[0].id);
+            setRecoveryP2(data[1].id);
+            setRecoveryP3(data[2].id);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -24,7 +55,15 @@ export const JoinModal = ({ isOpen, onClose }) => {
     try {
       setIsSubmitting(true);
       setLocalError(null);
-      const resp = await joinLeague(seasonCode.trim().toUpperCase(), teamName.trim(), '4-3-3');
+      const resp = await joinLeague(
+        seasonCode.trim().toUpperCase(),
+        teamName.trim(),
+        '4-3-3',
+        recoveryP1 ? parseInt(recoveryP1) : null,
+        recoveryP2 ? parseInt(recoveryP2) : null,
+        recoveryP3 ? parseInt(recoveryP3) : null,
+        secretWord.trim()
+      );
       setCreatedPin(resp.manager_code);
       setTab('pin_success');
     } catch (err) {
@@ -52,6 +91,31 @@ export const JoinModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleRecover = async (e) => {
+    e.preventDefault();
+    if (!recoverP1 || !recoverP2 || !recoverP3 || !recoverWord.trim()) {
+      setLocalError('Please select all 3 security players and enter your secret word.');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      setLocalError(null);
+      const resp = await recoverTeam(
+        recoverSeason.trim().toUpperCase(),
+        parseInt(recoverP1),
+        parseInt(recoverP2),
+        parseInt(recoverP3),
+        recoverWord.trim()
+      );
+      setCreatedPin(resp.manager_code);
+      setTab('pin_success');
+    } catch (err) {
+      setLocalError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleCopyPin = () => {
     navigator.clipboard.writeText(createdPin);
     setCopied(true);
@@ -59,8 +123,8 @@ export const JoinModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden my-8">
         {/* Background glow */}
         <div className="absolute -top-20 -right-20 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -72,7 +136,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-black text-white">BeanLeague Fantasy</h2>
-              <p className="text-xs text-slate-400">Login-less soccer league for you and your friends</p>
+              <p className="text-xs text-slate-400">Login-less soccer league with Secret Player Recovery</p>
             </div>
           </div>
 
@@ -86,7 +150,7 @@ export const JoinModal = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* PIN Created Success Screen */}
+        {/* PIN Created / Recovered Success Screen */}
         {tab === 'pin_success' ? (
           <div className="text-center py-4 space-y-4">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto animate-bounce-short">
@@ -94,9 +158,9 @@ export const JoinModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <h3 className="text-lg font-black text-white">Team Created!</h3>
+              <h3 className="text-lg font-black text-white">Manager Code Ready!</h3>
               <p className="text-xs text-slate-400 mt-1">
-                Save your 6-digit Manager PIN in your Notes app to re-access your team on any phone or iPad:
+                Save your 6-digit PIN in your Notes app. You can also recover it anytime using your 3 Secret Players!
               </p>
             </div>
 
@@ -121,7 +185,10 @@ export const JoinModal = ({ isOpen, onClose }) => {
             </div>
 
             <button
-              onClick={onClose}
+              onClick={async () => {
+                await login(createdPin);
+                onClose();
+              }}
               className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2 text-sm"
             >
               <span>Build My Starting XI</span>
@@ -156,12 +223,25 @@ export const JoinModal = ({ isOpen, onClose }) => {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Existing Manager (PIN)
+                Login (PIN)
+              </button>
+              <button
+                onClick={() => {
+                  setTab('recover');
+                  setLocalError(null);
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                  tab === 'recover'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Recover Code
               </button>
             </div>
 
-            {/* Form */}
-            {tab === 'create' ? (
+            {/* CREATE TEAM TAB */}
+            {tab === 'create' && (
               <form onSubmit={handleCreateTeam} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -172,10 +252,9 @@ export const JoinModal = ({ isOpen, onClose }) => {
                     value={seasonCode}
                     onChange={(e) => setSeasonCode(e.target.value.toUpperCase())}
                     placeholder="e.g. BARCA-2026"
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
                     required
                   />
-                  <p className="text-[11px] text-slate-500 mt-1">Shared code given by your league commissioner</p>
                 </div>
 
                 <div>
@@ -187,9 +266,85 @@ export const JoinModal = ({ isOpen, onClose }) => {
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     placeholder="e.g. Thunder Strikers FC"
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
                     required
                   />
+                </div>
+
+                {/* Security Vault Section */}
+                <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3">
+                  <div
+                    onClick={() => setShowSecuritySetup(!showSecuritySetup)}
+                    className="flex items-center justify-between cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-bold text-white">
+                        Security Vault (3 Players + Secret Word)
+                      </span>
+                    </div>
+                    {showSecuritySetup ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </div>
+
+                  {showSecuritySetup && (
+                    <div className="space-y-2.5 pt-1">
+                      <p className="text-[11px] text-slate-400">
+                        Pick 3 players you'll remember in order. If you lose your 6-digit PIN, you can recover it instantly!
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">1st Player</label>
+                          <select
+                            value={recoveryP1}
+                            onChange={(e) => setRecoveryP1(e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-400"
+                          >
+                            {playersList.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.position})</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Player</label>
+                          <select
+                            value={recoveryP2}
+                            onChange={(e) => setRecoveryP2(e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-400"
+                          >
+                            {playersList.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.position})</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">3rd Player</label>
+                          <select
+                            value={recoveryP3}
+                            onChange={(e) => setRecoveryP3(e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-400"
+                          >
+                            {playersList.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.position})</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Secret Word</label>
+                        <input
+                          type="text"
+                          value={secretWord}
+                          onChange={(e) => setSecretWord(e.target.value)}
+                          placeholder="e.g. pizza, dinosaur, galaxy"
+                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {(localError || authError) && (
@@ -205,7 +360,10 @@ export const JoinModal = ({ isOpen, onClose }) => {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
-            ) : (
+            )}
+
+            {/* LOGIN PIN TAB */}
+            {tab === 'login' && (
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -222,9 +380,6 @@ export const JoinModal = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Enter the PIN you received when you created your team
-                  </p>
                 </div>
 
                 {(localError || authError) && (
@@ -238,6 +393,117 @@ export const JoinModal = ({ isOpen, onClose }) => {
                 >
                   {isSubmitting ? 'Logging in...' : 'Load My Team'}
                   <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab('recover');
+                      setLocalError(null);
+                    }}
+                    className="text-xs text-emerald-400 hover:underline inline-flex items-center gap-1 font-semibold"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    Forgot your PIN? Recover with 3 Secret Players
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* RECOVERY TAB */}
+            {tab === 'recover' && (
+              <form onSubmit={handleRecover} className="space-y-4">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300">
+                  Enter the 3 secret players in their exact order and the secret word you chose when creating your team.
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Season Code (Room)
+                  </label>
+                  <input
+                    type="text"
+                    value={recoverSeason}
+                    onChange={(e) => setRecoverSeason(e.target.value.toUpperCase())}
+                    placeholder="e.g. BARCA-2026"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm font-mono text-white focus:outline-none focus:border-emerald-400"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">1st Player</label>
+                    <select
+                      value={recoverP1}
+                      onChange={(e) => setRecoverP1(e.target.value)}
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-400"
+                      required
+                    >
+                      <option value="">Select #1...</option>
+                      {playersList.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.position})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Player</label>
+                    <select
+                      value={recoverP2}
+                      onChange={(e) => setRecoverP2(e.target.value)}
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-400"
+                      required
+                    >
+                      <option value="">Select #2...</option>
+                      {playersList.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.position})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">3rd Player</label>
+                    <select
+                      value={recoverP3}
+                      onChange={(e) => setRecoverP3(e.target.value)}
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-400"
+                      required
+                    >
+                      <option value="">Select #3...</option>
+                      {playersList.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.position})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Secret Word
+                  </label>
+                  <input
+                    type="text"
+                    value={recoverWord}
+                    onChange={(e) => setRecoverWord(e.target.value)}
+                    placeholder="Enter your secret word"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400"
+                    required
+                  />
+                </div>
+
+                {(localError || authError) && (
+                  <p className="text-xs text-rose-400 font-semibold">{localError || authError}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2 text-sm"
+                >
+                  {isSubmitting ? 'Verifying...' : 'Unlock My Manager Code'}
+                  <Lock className="w-4 h-4" />
                 </button>
               </form>
             )}

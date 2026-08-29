@@ -47,3 +47,20 @@ async def test_resolve_player_photo_fallback(tmp_path, monkeypatch):
     )
     assert res_path.exists()
     assert res_path.suffix in (".webp", ".svg")
+
+@pytest.mark.asyncio
+async def test_photo_audit_and_sync_early_exit(tmp_path, monkeypatch, db_conn):
+    from app.pipeline.photo_scraper import run_photo_audit_and_sync
+    monkeypatch.setattr("app.pipeline.photo_scraper.PHOTOS_DIR", tmp_path)
+
+    # Pre-create cached photos for all players in test DB
+    cursor = await db_conn.execute("SELECT id FROM players")
+    all_players = await cursor.fetchall()
+    for p in all_players:
+        (tmp_path / f"{p['id']}.webp").write_bytes(b"dummy-image-content-longer-than-100-bytes" * 5)
+
+    # Run audit - should immediately exit as fresh (0 network calls)
+    result = await run_photo_audit_and_sync(db_conn)
+    assert result["status"] == "fresh"
+    assert result["missing_count"] == 0
+    assert result["processed_count"] == 0
