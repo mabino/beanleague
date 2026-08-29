@@ -85,6 +85,77 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                         )
                     await db.commit()
 
+            # Fetch live team squads from API-Football for real player directory
+            TARGET_TEAMS = [
+                {"id": 529, "name": "Barcelona"},
+                {"id": 541, "name": "Real Madrid"},
+                {"id": 50, "name": "Manchester City"},
+                {"id": 42, "name": "Arsenal"},
+                {"id": 40, "name": "Liverpool"},
+                {"id": 49, "name": "Chelsea"},
+                {"id": 530, "name": "Atletico Madrid"},
+                {"id": 157, "name": "Bayern Munich"},
+                {"id": 489, "name": "Paris Saint Germain"},
+                {"id": 496, "name": "Inter"}
+            ]
+
+            POS_MAP = {
+                "Goalkeeper": "GK",
+                "Defender": "DEF",
+                "Midfielder": "MID",
+                "Attacker": "FWD"
+            }
+
+            BASE_PRICES = {
+                "GK": 5.5,
+                "DEF": 6.0,
+                "MID": 7.5,
+                "FWD": 8.5
+            }
+
+            STAR_PRICES = {p["id"]: p["current_price"] for p in MOCK_PLAYERS}
+
+            for team in TARGET_TEAMS:
+                used_now = await client.get_today_usage(db)
+                if used_now >= settings.API_DAILY_LIMIT - 5:
+                    logger.warning("Approaching daily API limit; stopping squad ingestion.")
+                    break
+
+                squad_resp = await client.fetch(
+                    "players/squads",
+                    params={"team": team["id"]},
+                    db=db
+                )
+                if squad_resp and "response" in squad_resp and squad_resp["response"]:
+                    used_api = True
+                    for team_data in squad_resp["response"]:
+                        team_name = team_data.get("team", {}).get("name", team["name"])
+                        team_id = team_data.get("team", {}).get("id", team["id"])
+                        for pl in team_data.get("players", []):
+                            pl_id = pl["id"]
+                            raw_pos = pl.get("position", "Midfielder")
+                            pos = POS_MAP.get(raw_pos, "MID")
+                            price = STAR_PRICES.get(pl_id, BASE_PRICES.get(pos, 6.0))
+                            photo = pl.get("photo") or f"https://media.api-sports.io/football/players/{pl_id}.png"
+                            name = pl.get("name", "Unknown Player")
+                            parts = name.split()
+                            short_name = parts[-1] if len(parts) > 1 else name
+
+                            await db.execute(
+                                """
+                                INSERT INTO players (id, name, short_name, real_team_id, real_team_name, position, current_price, photo_url, status)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ON CONFLICT(id) DO UPDATE SET
+                                    name = excluded.name,
+                                    short_name = excluded.short_name,
+                                    real_team_name = excluded.real_team_name,
+                                    position = excluded.position,
+                                    photo_url = excluded.photo_url
+                                """,
+                                (pl_id, name, short_name, team_id, team_name, pos, price, photo, "Active")
+                            )
+                    await db.commit()
+
     # 3. If API wasn't used or returned no items, seed from curated dataset
     cursor = await db.execute("SELECT COUNT(*) FROM players")
     player_count = (await cursor.fetchone())[0]
