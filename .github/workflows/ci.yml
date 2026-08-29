@@ -28,5 +28,5 @@ jobs:
 
       - name: Run Frontend Build Verification (Dockerized)
         run: |
-          docker run --rm -v "$PWD/frontend:/app" -w /app node:20-alpine \
-            sh -c "npm run build"
+          docker run --rm -v "$PWD/frontend:/src:ro" -w /work node:20-alpine \
+            sh -c "cp -r /src/. /work && npm ci --no-audit --no-fund && npm run build"
