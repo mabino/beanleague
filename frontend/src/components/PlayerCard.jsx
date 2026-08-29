@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Sparkles, X, Shield, Zap } from 'lucide-react';
+import { Crown, Sparkles, X, Shield, Zap, Video } from 'lucide-react';
 import { useLiveEvents } from '../context/LiveEventsContext';
 
 const POSITION_COLORS = {
@@ -22,13 +22,15 @@ export const PlayerCard = ({
   isStarting = true,
   onMakeCaptain,
   onRemove,
+  onOpenMedia,
   onClick,
   compact = false,
   isSelectable = false,
   isTargetSlot = false,
 }) => {
   const { pulsePlayerIds } = useLiveEvents();
-  const isPulsing = player && pulsePlayerIds.has(player.id);
+  const isPulsing = player && pulsePlayerIds.has(player.id || player.player_id);
+  const videoCount = player?.youtube_links?.length || 0;
 
   if (!player) {
     return (
@@ -84,7 +86,7 @@ export const PlayerCard = ({
       {/* Jersey / Photo Avatar */}
       <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gradient-to-br ${jerseyGradient} p-0.5 flex items-center justify-center shadow-inner border border-white/20 mb-1`}>
         <img
-          src={player.photo_url || `/beanleague/api/players/${player.id}/photo`}
+          src={player.photo_url || `/beanleague/api/players/${player.player_id || player.id}/photo`}
           alt={player.name}
           loading="lazy"
           className="w-full h-full object-cover rounded-full"
@@ -119,24 +121,40 @@ export const PlayerCard = ({
         </p>
       </div>
 
-      {/* Price & Action Row */}
+      {/* Price, Video Highlights & Captain Action Row */}
       <div className="w-full mt-1 pt-1 border-t border-white/10 flex items-center justify-between text-[10px]">
         <span className="font-semibold text-emerald-300">
           ${player.current_price?.toFixed(1)}M
         </span>
 
-        {isStarting && onMakeCaptain && !isCaptain && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMakeCaptain(player);
-            }}
-            className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 transition flex items-center gap-0.5"
-            title="Make Captain (2x points)"
-          >
-            <Crown className="w-2.5 h-2.5" /> (C)
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {videoCount > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenMedia) onOpenMedia(player);
+              }}
+              className="px-1 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 transition flex items-center gap-0.5"
+              title={`${videoCount} YouTube highlight reels`}
+            >
+              <Video className="w-2.5 h-2.5" />
+              <span className="text-[9px] font-bold">{videoCount}</span>
+            </button>
+          )}
+
+          {isStarting && onMakeCaptain && !isCaptain && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMakeCaptain(player);
+              }}
+              className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 transition flex items-center gap-0.5"
+              title="Make Captain (2x points)"
+            >
+              <Crown className="w-2.5 h-2.5" /> (C)
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

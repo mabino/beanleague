@@ -90,6 +90,22 @@ export const api = {
     });
   },
 
+  updateTeamKit(managerCode, kitConfig) {
+    return this.request("/api/teams/me/kit", {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${managerCode}` },
+      body: JSON.stringify({ kit_config: kitConfig }),
+    });
+  },
+
+  updatePlayerMedia(managerCode, playerId, { youtube_links, custom_notes }) {
+    return this.request(`/api/teams/me/players/${playerId}/media`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${managerCode}` },
+      body: JSON.stringify({ youtube_links, custom_notes }),
+    });
+  },
+
   getTeamPublic(teamId) {
     return this.request(`/api/teams/${teamId}`);
   },

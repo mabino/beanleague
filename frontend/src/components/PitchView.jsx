@@ -19,6 +19,7 @@ export const PitchView = ({
   captainId = null,
   onMakeCaptain,
   onRemovePlayer,
+  onOpenMedia,
   onSelectSlot,
   isReadonly = false,
 }) => {
@@ -62,13 +63,20 @@ export const PitchView = ({
           <div className="flex justify-center items-center gap-2 sm:gap-6 flex-wrap">
             {fwds.map((player, idx) => (
               <PlayerCard
-                key={player ? `fwd-${player.id}` : `fwd-empty-${idx}`}
+                key={player ? `fwd-${player.id || player.player_id}` : `fwd-empty-${idx}`}
                 player={player}
-                isCaptain={player && player.id === captainId}
+                isCaptain={player && (player.id || player.player_id) === captainId}
                 isStarting={true}
                 onMakeCaptain={!isReadonly ? onMakeCaptain : undefined}
                 onRemove={!isReadonly ? onRemovePlayer : undefined}
-                onClick={() => !isReadonly && onSelectSlot && onSelectSlot('FWD', player)}
+                onOpenMedia={onOpenMedia}
+                onClick={() => {
+                  if (player && onOpenMedia) {
+                    onOpenMedia(player);
+                  } else if (!isReadonly && onSelectSlot) {
+                    onSelectSlot('FWD', player);
+                  }
+                }}
               />
             ))}
           </div>
@@ -77,13 +85,20 @@ export const PitchView = ({
           <div className="flex justify-center items-center gap-2 sm:gap-5 flex-wrap">
             {mids.map((player, idx) => (
               <PlayerCard
-                key={player ? `mid-${player.id}` : `mid-empty-${idx}`}
+                key={player ? `mid-${player.id || player.player_id}` : `mid-empty-${idx}`}
                 player={player}
-                isCaptain={player && player.id === captainId}
+                isCaptain={player && (player.id || player.player_id) === captainId}
                 isStarting={true}
                 onMakeCaptain={!isReadonly ? onMakeCaptain : undefined}
                 onRemove={!isReadonly ? onRemovePlayer : undefined}
-                onClick={() => !isReadonly && onSelectSlot && onSelectSlot('MID', player)}
+                onOpenMedia={onOpenMedia}
+                onClick={() => {
+                  if (player && onOpenMedia) {
+                    onOpenMedia(player);
+                  } else if (!isReadonly && onSelectSlot) {
+                    onSelectSlot('MID', player);
+                  }
+                }}
               />
             ))}
           </div>
@@ -92,13 +107,20 @@ export const PitchView = ({
           <div className="flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
             {defs.map((player, idx) => (
               <PlayerCard
-                key={player ? `def-${player.id}` : `def-empty-${idx}`}
+                key={player ? `def-${player.id || player.player_id}` : `def-empty-${idx}`}
                 player={player}
-                isCaptain={player && player.id === captainId}
+                isCaptain={player && (player.id || player.player_id) === captainId}
                 isStarting={true}
                 onMakeCaptain={!isReadonly ? onMakeCaptain : undefined}
                 onRemove={!isReadonly ? onRemovePlayer : undefined}
-                onClick={() => !isReadonly && onSelectSlot && onSelectSlot('DEF', player)}
+                onOpenMedia={onOpenMedia}
+                onClick={() => {
+                  if (player && onOpenMedia) {
+                    onOpenMedia(player);
+                  } else if (!isReadonly && onSelectSlot) {
+                    onSelectSlot('DEF', player);
+                  }
+                }}
               />
             ))}
           </div>
@@ -107,13 +129,20 @@ export const PitchView = ({
           <div className="flex justify-center items-center">
             {gks.map((player, idx) => (
               <PlayerCard
-                key={player ? `gk-${player.id}` : `gk-empty-${idx}`}
+                key={player ? `gk-${player.id || player.player_id}` : `gk-empty-${idx}`}
                 player={player}
-                isCaptain={player && player.id === captainId}
+                isCaptain={player && (player.id || player.player_id) === captainId}
                 isStarting={true}
                 onMakeCaptain={!isReadonly ? onMakeCaptain : undefined}
                 onRemove={!isReadonly ? onRemovePlayer : undefined}
-                onClick={() => !isReadonly && onSelectSlot && onSelectSlot('GK', player)}
+                onOpenMedia={onOpenMedia}
+                onClick={() => {
+                  if (player && onOpenMedia) {
+                    onOpenMedia(player);
+                  } else if (!isReadonly && onSelectSlot) {
+                    onSelectSlot('GK', player);
+                  }
+                }}
               />
             ))}
           </div>
@@ -137,13 +166,20 @@ export const PitchView = ({
         <div className="flex justify-center items-center gap-3 sm:gap-6 flex-wrap">
           {benchSlots.map((player, idx) => (
             <PlayerCard
-              key={player ? `bench-${player.id}` : `bench-empty-${idx}`}
+              key={player ? `bench-${player.id || player.player_id}` : `bench-empty-${idx}`}
               player={player}
               isCaptain={false}
               isStarting={false}
               compact={true}
               onRemove={!isReadonly ? onRemovePlayer : undefined}
-              onClick={() => !isReadonly && onSelectSlot && onSelectSlot('BENCH', player)}
+              onOpenMedia={onOpenMedia}
+              onClick={() => {
+                if (player && onOpenMedia) {
+                  onOpenMedia(player);
+                } else if (!isReadonly && onSelectSlot) {
+                  onSelectSlot('BENCH', player);
+                }
+              }}
             />
           ))}
         </div>

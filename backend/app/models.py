@@ -17,10 +17,29 @@ class LeagueResponse(BaseModel):
     created_at: str
 
 # --- Team & Auth Models ---
+class KitConfig(BaseModel):
+    primary_color: str = "#10B981"
+    secondary_color: str = "#0F172A"
+    pattern: str = "solid"  # solid, vertical_stripes, hoops, sash, split, checker, sleeves
+    badge_icon: str = "shield"  # shield, crown, lightning, flame, dragon, star, lion, skull, falcon
+
+class PlayerMediaItem(BaseModel):
+    url: str
+    video_id: str
+    title: Optional[str] = None
+
+class PlayerMediaSaveRequest(BaseModel):
+    youtube_links: List[PlayerMediaItem] = []
+    custom_notes: Optional[str] = None
+
+class TeamKitUpdateRequest(BaseModel):
+    kit_config: Dict[str, Any]
+
 class TeamCreate(BaseModel):
     season_code: str = Field(..., json_schema_extra={"example": "BARCA-2026"})
     team_name: str = Field(..., min_length=2, max_length=30, json_schema_extra={"example": "Lightning Strikers"})
     formation: str = Field("4-3-3", json_schema_extra={"example": "4-3-3"})
+    kit_config: Optional[Dict[str, Any]] = None
     recovery_player_1_id: Optional[int] = Field(None, description="First security player ID")
     recovery_player_2_id: Optional[int] = Field(None, description="Second security player ID")
     recovery_player_3_id: Optional[int] = Field(None, description="Third security player ID")
@@ -50,6 +69,7 @@ class TeamJoinResponse(BaseModel):
     manager_code: str
     formation: str
     total_points: int
+    kit_config: Optional[Dict[str, Any]] = None
 
 class TeamLoginRequest(BaseModel):
     manager_code: str = Field(..., json_schema_extra={"example": "849-201"})
@@ -93,6 +113,17 @@ class TeamRosterResponse(BaseModel):
     total_cost: float
     salary_cap: float
     remaining_budget: float
+    kit_config: Optional[Dict[str, Any]] = None
+    players: List[Dict[str, Any]]
+
+class ScoutedTeamResponse(BaseModel):
+    team_id: str
+    team_name: str
+    formation: str
+    total_points: int
+    season_code: str
+    league_name: str
+    kit_config: Dict[str, Any]
     players: List[Dict[str, Any]]
 
 # --- Fixture Models ---
@@ -121,6 +152,7 @@ class LeaderboardEntry(BaseModel):
     total_points: int
     gameweek_points: int = 0
     player_count: int = 0
+    kit_config: Optional[Dict[str, Any]] = None
 
 class LeagueStandingsResponse(BaseModel):
     league_id: str

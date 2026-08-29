@@ -59,7 +59,7 @@ async def get_league_standings(season_code: str, db: aiosqlite.Connection = Depe
     # 2. Fetch teams ordered by points descending
     t_cur = await db.execute(
         """
-        SELECT t.id, t.team_name, t.manager_code, t.formation, t.total_points,
+        SELECT t.id, t.team_name, t.manager_code, t.formation, t.total_points, t.kit_config,
                (SELECT COUNT(*) FROM rosters WHERE team_id = t.id) as player_count
         FROM teams t
         WHERE t.league_id = ?
@@ -69,10 +69,18 @@ async def get_league_standings(season_code: str, db: aiosqlite.Connection = Depe
     )
     teams = await t_cur.fetchall()
     
+    import json
     standings_list = []
     for rank, t in enumerate(teams, start=1):
         pin = t["manager_code"]
         masked_pin = f"{pin[:2]}*-***" if len(pin) >= 6 else "***"
+        kit = None
+        if t["kit_config"]:
+            try:
+                kit = json.loads(t["kit_config"])
+            except Exception:
+                kit = None
+
         standings_list.append(LeaderboardEntry(
             rank=rank,
             team_id=t["id"],
@@ -81,7 +89,8 @@ async def get_league_standings(season_code: str, db: aiosqlite.Connection = Depe
             formation=t["formation"],
             total_points=t["total_points"],
             gameweek_points=t["total_points"],
-            player_count=t["player_count"]
+            player_count=t["player_count"],
+            kit_config=kit
         ))
 
     return LeagueStandingsResponse(

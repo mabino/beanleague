@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS teams (
     team_name TEXT NOT NULL,
     formation TEXT NOT NULL DEFAULT '4-3-3',
     total_points INTEGER NOT NULL DEFAULT 0,
+    kit_config TEXT DEFAULT '{"primary_color":"#10B981","secondary_color":"#0F172A","pattern":"solid","badge_icon":"shield"}',
     recovery_player_1_id INTEGER,
     recovery_player_2_id INTEGER,
     recovery_player_3_id INTEGER,
@@ -99,13 +100,15 @@ CREATE TABLE IF NOT EXISTS rosters (
     is_captain INTEGER NOT NULL DEFAULT 0,
     slot_position TEXT,
     slot_index INTEGER DEFAULT 0,
+    youtube_links TEXT DEFAULT '[]',
+    custom_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(team_id, player_id),
     FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 
--- 7. API Usage Log Table (Tracks the 100/day hard constraint on API-Football)
+-- 7. API Usage Log Table (Rate-limit auditor & failover protection)
 CREATE TABLE IF NOT EXISTS api_usage_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
@@ -115,12 +118,12 @@ CREATE TABLE IF NOT EXISTS api_usage_log (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. Match Events Table (Real-time events for SSE broadcasting)
+-- 8. Match Events Stream Table (Real-time live commentary)
 CREATE TABLE IF NOT EXISTS match_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fixture_id INTEGER NOT NULL,
     player_id INTEGER NOT NULL,
-    event_type TEXT NOT NULL CHECK(event_type IN ('goal', 'assist', 'clean_sheet', 'yellow_card', 'red_card', 'save', 'penalty_save', 'own_goal', 'sub_in', 'sub_out', 'match_start', 'match_end')),
+    event_type TEXT NOT NULL CHECK(event_type IN ('goal', 'assist', 'yellow_card', 'red_card', 'save', 'clean_sheet', 'sub')),
     minute INTEGER NOT NULL,
     detail TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -150,6 +153,8 @@ async def init_db(db_path: str = None):
         # Defensive schema migrations for existing databases
         cursor = await db.execute("PRAGMA table_info(teams)")
         existing_cols = [row[1] for row in await cursor.fetchall()]
+        if "kit_config" not in existing_cols:
+            await db.execute("ALTER TABLE teams ADD COLUMN kit_config TEXT DEFAULT '{\"primary_color\":\"#10B981\",\"secondary_color\":\"#0F172A\",\"pattern\":\"solid\",\"badge_icon\":\"shield\"}';")
         if "recovery_player_1_id" not in existing_cols:
             await db.execute("ALTER TABLE teams ADD COLUMN recovery_player_1_id INTEGER;")
         if "recovery_player_2_id" not in existing_cols:
@@ -158,6 +163,13 @@ async def init_db(db_path: str = None):
             await db.execute("ALTER TABLE teams ADD COLUMN recovery_player_3_id INTEGER;")
         if "recovery_word" not in existing_cols:
             await db.execute("ALTER TABLE teams ADD COLUMN recovery_word TEXT;")
+
+        r_cursor = await db.execute("PRAGMA table_info(rosters)")
+        r_cols = [row[1] for row in await r_cursor.fetchall()]
+        if "youtube_links" not in r_cols:
+            await db.execute("ALTER TABLE rosters ADD COLUMN youtube_links TEXT DEFAULT '[]';")
+        if "custom_notes" not in r_cols:
+            await db.execute("ALTER TABLE rosters ADD COLUMN custom_notes TEXT;")
 
         await db.commit()
     logger.info("Database schema initialized successfully.")

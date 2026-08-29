@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Medal, Users, Eye, Sparkles, RefreshCw } from 'lucide-react';
+import { Trophy, Medal, Users, Eye, Sparkles, RefreshCw, Binoculars } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { JerseyKit } from './JerseyKit';
 
 export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => {
   const { team: myTeam } = useAuth();
@@ -71,7 +72,7 @@ export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => 
           <thead>
             <tr className="text-[11px] text-slate-400 uppercase tracking-wider border-b border-slate-800">
               <th className="pb-3 pl-2 font-bold">Rank</th>
-              <th className="pb-3 font-bold">Team</th>
+              <th className="pb-3 font-bold">Club & Kit</th>
               <th className="pb-3 font-bold hidden sm:table-cell">Formation</th>
               <th className="pb-3 font-bold hidden md:table-cell">Players</th>
               <th className="pb-3 text-right pr-2 font-bold">Total Points</th>
@@ -109,21 +110,31 @@ export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => 
                       {getRankBadge(team.rank)}
                     </td>
 
-                    {/* Team & Manager */}
+                    {/* Team & Kit */}
                     <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-white">
-                          {team.team_name}
-                        </span>
-                        {isMyTeam && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
-                            YOU
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0 p-1 rounded-xl bg-slate-950 border border-slate-800 shadow-inner">
+                          <JerseyKit kitConfig={team.kit_config} size={28} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => onSelectTeam && onSelectTeam(team.team_id)}
+                              className="font-extrabold text-white hover:text-emerald-400 text-left transition"
+                            >
+                              {team.team_name}
+                            </button>
+                            {isMyTeam && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                                YOU
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-500 font-mono">
+                            PIN: {team.manager_code_masked}
                           </span>
-                        )}
+                        </div>
                       </div>
-                      <span className="text-[11px] text-slate-500 font-mono">
-                        PIN: {team.manager_code_masked}
-                      </span>
                     </td>
 
                     {/* Formation */}
@@ -150,10 +161,11 @@ export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => 
                     <td className="py-3 text-right pr-2">
                       <button
                         onClick={() => onSelectTeam && onSelectTeam(team.team_id)}
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
-                        title="Scout Team Pitch View"
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-300 transition flex items-center gap-1.5 text-xs font-bold shadow ml-auto"
+                        title="Scout Team Pitch & Highlights"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Binoculars className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Scout</span>
                       </button>
                     </td>
                   </tr>
