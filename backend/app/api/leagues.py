@@ -7,6 +7,22 @@ from ..models import LeagueCreate, LeagueResponse, LeagueStandingsResponse, Lead
 
 router = APIRouter(prefix="/api/leagues", tags=["Leagues"])
 
+@router.get("", response_model=List[Dict[str, Any]])
+async def list_leagues(db: aiosqlite.Connection = Depends(get_db)):
+    """Lists all available fantasy soccer seasons / leagues."""
+    cursor = await db.execute(
+        """
+        SELECT l.id, l.season_code, l.name, l.max_teams, l.salary_cap, l.created_at,
+               COUNT(t.id) as team_count
+        FROM leagues l
+        LEFT JOIN teams t ON l.id = t.league_id
+        GROUP BY l.id
+        ORDER BY l.created_at ASC
+        """
+    )
+    rows = await cursor.fetchall()
+    return [dict(r) for r in rows]
+
 @router.post("", response_model=LeagueResponse, status_code=status.HTTP_201_CREATED)
 async def create_league(league_in: LeagueCreate, db: aiosqlite.Connection = Depends(get_db)):
     """Creates a new virtual fantasy soccer league with a Season Code."""

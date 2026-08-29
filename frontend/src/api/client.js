@@ -32,6 +32,22 @@ export const api = {
   },
 
   // Leagues & Standings
+  getLeagues() {
+    return this.request('/api/leagues');
+  },
+
+  createLeague(seasonCode, leagueName, salaryCap = 100.0, maxTeams = 16) {
+    return this.request('/api/leagues', {
+      method: 'POST',
+      body: JSON.stringify({
+        season_code: seasonCode,
+        name: leagueName,
+        salary_cap: salaryCap,
+        max_teams: maxTeams,
+      }),
+    });
+  },
+
   getLeague(seasonCode) {
     return this.request(`/api/leagues/${seasonCode}`);
   },

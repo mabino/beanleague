@@ -229,9 +229,13 @@ export function App() {
                 <h1 className="text-base sm:text-xl font-black text-white tracking-tight truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
                   {team?.team_name || 'BeanLeague Fantasy'}
                 </h1>
-                <span className="text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  {seasonCode}
-                </span>
+                <button
+                  onClick={() => setIsJoinModalOpen(true)}
+                  className="text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition hover:scale-105"
+                  title="Switch or create fantasy season"
+                >
+                  {seasonCode} ▾
+                </button>
               </div>
               <p className="text-[10px] sm:text-[11px] text-slate-400">
                 Score: <strong className="text-emerald-400 font-bold">{team?.total_points || 0} pts</strong>
@@ -361,6 +365,7 @@ export function App() {
             <LiveLeaderboard
               seasonCode={seasonCode}
               onSelectTeam={(teamId) => setScoutTeamId(teamId)}
+              onOpenJoinModal={() => setIsJoinModalOpen(true)}
             />
           </div>
         )}

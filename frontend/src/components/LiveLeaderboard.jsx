@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { JerseyKit } from './JerseyKit';
 
-export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => {
+export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam, onOpenJoinModal }) => {
   const { team: myTeam } = useAuth();
   const [standings, setStandings] = useState([]);
   const [leagueInfo, setLeagueInfo] = useState(null);
@@ -41,7 +41,7 @@ export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => 
   return (
     <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-2xl backdrop-blur-md">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-800">
+      <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-800 flex-wrap gap-2">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-2 sm:p-2.5 bg-amber-500/20 text-amber-400 rounded-xl sm:rounded-2xl border border-amber-500/30">
             <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -56,14 +56,25 @@ export const LiveLeaderboard = ({ seasonCode = 'BARCA-2026', onSelectTeam }) => 
           </div>
         </div>
 
-        <button
-          onClick={fetchStandings}
-          disabled={isLoading}
-          className="p-1.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
-          title="Refresh Standings"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenJoinModal && (
+            <button
+              onClick={onOpenJoinModal}
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition flex items-center gap-1"
+            >
+              <span>+ Create / Switch Season</span>
+            </button>
+          )}
+
+          <button
+            onClick={fetchStandings}
+            disabled={isLoading}
+            className="p-1.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+            title="Refresh Standings"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Standings Table */}

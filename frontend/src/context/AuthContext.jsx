@@ -86,6 +86,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const createNewSeasonAndTeam = async (seasonCode, seasonName, salaryCap = 100.0, teamName, formation = "4-3-3") => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      // 1. Create the league
+      await api.createLeague(seasonCode.trim().toUpperCase(), seasonName.trim(), salaryCap);
+      // 2. Create the founding team
+      const resp = await api.createTeam(seasonCode.trim().toUpperCase(), teamName.trim(), formation);
+      localStorage.setItem("beanleague_pin", resp.manager_code);
+      localStorage.setItem("beanleague_season", resp.season_code);
+      setManagerCode(resp.manager_code);
+      setSeasonCode(resp.season_code);
+      await fetchTeamData(resp.manager_code);
+      return resp;
+    } catch (err) {
+      setAuthError(err.message);
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
   const recoverTeam = async (seasonCode, p1Id, p2Id, p3Id, word) => {
     setIsLoading(true);
     setAuthError(null);
@@ -123,6 +144,7 @@ export const AuthProvider = ({ children }) => {
         authError,
         login,
         joinLeague,
+        createNewSeasonAndTeam,
         recoverTeam,
         logout,
         refreshRoster,
