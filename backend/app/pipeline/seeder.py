@@ -40,50 +40,89 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
         used_today = await client.get_today_usage(db)
         if used_today < settings.API_DAILY_LIMIT:
             logger.info("Fetching fixtures and players from external API-Football...")
-            today_str = date.today().isoformat()
-            
-            # Fetch fixtures for target leagues
+            today = date.today()
+            from datetime import timedelta
+            from_date = (today - timedelta(days=3)).isoformat()
+            to_date = (today + timedelta(days=4)).isoformat()
+
+            # Helper to parse and insert fixture records
+            async def insert_fixture_items(items):
+                nonlocal used_api
+                if not items:
+                    return
+                used_api = True
+                for item in items:
+                    fix = item.get("fixture", {})
+                    teams = item.get("teams", {})
+                    goals = item.get("goals", {})
+                    lg = item.get("league", {})
+                    
+                    status_short = fix.get("status", {}).get("short", "NS")
+                    if status_short in ("1H", "2H", "HT", "ET", "P", "LIVE"):
+                        mapped_status = "In-Play"
+                    elif status_short in ("FT", "AET", "PEN"):
+                        mapped_status = "Finished"
+                    else:
+                        mapped_status = "Scheduled"
+
+                    await db.execute(
+                        """
+                        INSERT INTO fixtures (id, league_id, round, home_team_id, home_team_name, home_team_logo,
+                                              away_team_id, away_team_name, away_team_logo, kickoff_time, status, home_score, away_score)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            round = excluded.round,
+                            home_score = excluded.home_score,
+                            away_score = excluded.away_score,
+                            status = excluded.status,
+                            updated_at = CURRENT_TIMESTAMP
+                        """,
+                        (
+                            fix.get("id"),
+                            lg.get("id", league_id),
+                            lg.get("round", "Regular Season"),
+                            teams.get("home", {}).get("id", 0),
+                            teams.get("home", {}).get("name", "Home Team"),
+                            teams.get("home", {}).get("logo"),
+                            teams.get("away", {}).get("id", 0),
+                            teams.get("away", {}).get("name", "Away Team"),
+                            teams.get("away", {}).get("logo"),
+                            fix.get("date", today.isoformat()),
+                            mapped_status,
+                            goals.get("home", 0) or 0,
+                            goals.get("away", 0) or 0
+                        )
+                    )
+                await db.commit()
+
+            # Fetch fixtures for target leagues across the weekly window
             for league_id in settings.TARGET_LEAGUE_IDS:
                 resp = await client.fetch(
                     "fixtures",
-                    params={"league": league_id, "season": settings.TARGET_SEASON, "date": today_str},
+                    params={"league": league_id, "season": settings.TARGET_SEASON, "from": from_date, "to": to_date},
                     db=db
                 )
-                if resp and "response" in resp and resp["response"]:
-                    used_api = True
-                    for item in resp["response"]:
-                        fix = item["fixture"]
-                        teams = item["teams"]
-                        goals = item.get("goals", {})
+                items = resp.get("response", []) if resp else []
+                
+                # If no fixtures found in exact date window, fetch next and recent matches
+                if not items:
+                    next_resp = await client.fetch(
+                        "fixtures",
+                        params={"league": league_id, "next": 5},
+                        db=db
+                    )
+                    if next_resp and next_resp.get("response"):
+                        items.extend(next_resp["response"])
                         
-                        await db.execute(
-                            """
-                            INSERT INTO fixtures (id, league_id, round, home_team_id, home_team_name, home_team_logo,
-                                                  away_team_id, away_team_name, away_team_logo, kickoff_time, status, home_score, away_score)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ON CONFLICT(id) DO UPDATE SET
-                                status = excluded.status,
-                                home_score = excluded.home_score,
-                                away_score = excluded.away_score,
-                                updated_at = CURRENT_TIMESTAMP
-                            """,
-                            (
-                                fix["id"],
-                                league_id,
-                                item.get("league", {}).get("round", "Regular Season"),
-                                teams["home"]["id"],
-                                teams["home"]["name"],
-                                teams["home"].get("logo"),
-                                teams["away"]["id"],
-                                teams["away"]["name"],
-                                teams["away"].get("logo"),
-                                fix["date"],
-                                "In-Play" if fix["status"]["short"] in ("1H", "2H", "HT", "ET", "P", "LIVE") else ("Finished" if fix["status"]["short"] in ("FT", "AET", "PEN") else "Scheduled"),
-                                goals.get("home", 0) or 0,
-                                goals.get("away", 0) or 0
-                            )
-                        )
-                    await db.commit()
+                    last_resp = await client.fetch(
+                        "fixtures",
+                        params={"league": league_id, "last": 5},
+                        db=db
+                    )
+                    if last_resp and last_resp.get("response"):
+                        items.extend(last_resp["response"])
+
+                await insert_fixture_items(items)
 
             # Fetch live team squads from API-Football for real player directory
             TARGET_TEAMS = [
