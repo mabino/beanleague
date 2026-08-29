@@ -213,11 +213,15 @@ export function App() {
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-slate-950/90 border-b border-slate-800 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          {/* Logo & League Tag */}
+          {/* Logo, Kit Avatar & League Tag */}
           <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              <JerseyKit kitConfig={team?.kit_config} size={40} />
-            </div>
+            <button
+              onClick={() => setIsKitModalOpen(true)}
+              className="shrink-0 p-1 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400/60 hover:scale-105 transition shadow-sm group"
+              title="Click to customize team jersey & crest"
+            >
+              <JerseyKit kitConfig={team?.kit_config} size={36} />
+            </button>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
@@ -327,16 +331,7 @@ export function App() {
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <SimulationControls />
         {activeTab === 'pitch' && (
-          <div className="flex items-center gap-3">
-            <FormationSelector value={formation} onChange={(f) => setFormation(f)} />
-            <button
-              onClick={() => setIsKitModalOpen(true)}
-              className="px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400/50 text-xs font-bold text-slate-300 hover:text-white transition flex items-center gap-1.5 shadow"
-            >
-              <Shirt className="w-4 h-4 text-emerald-400" />
-              <span>Customize Kit</span>
-            </button>
-          </div>
+          <FormationSelector value={formation} onChange={(f) => setFormation(f)} />
         )}
       </div>
 
