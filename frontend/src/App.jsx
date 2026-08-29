@@ -73,6 +73,20 @@ export function App() {
     }
   }, [isLoading, managerCode]);
 
+  // Live system theme adaptation (when user hasn't explicitly pinned a theme)
+  useEffect(() => {
+    if (window.matchMedia) {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => {
+        if (!localStorage.getItem('binolabs-theme') && !localStorage.getItem('seccam-theme')) {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      };
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    }
+  }, []);
+
   // Calculate totals
   const allSquadPlayers = [...startingPlayers, ...benchPlayers];
   const totalCost = Math.round(allSquadPlayers.reduce((sum, p) => sum + (p.current_price || 0), 0) * 10) / 10;
@@ -474,6 +488,27 @@ export function App() {
 
       {/* Real-time Goal & Match Pulse Toasts */}
       <LivePulseToast />
+
+      {/* Thin Footer */}
+      <footer className="mt-12 py-6 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400 max-w-7xl mx-auto px-4">
+        <span>&copy; 2026 BinoLabs &bull; BeanLeague</span>
+        <button
+          id="theme-toggle"
+          onClick={() => {
+            const pinned = document.documentElement.getAttribute('data-theme');
+            const effective = pinned ||
+              (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const next = effective === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('binolabs-theme', next);
+          }}
+          className="p-1 text-slate-400 hover:text-slate-100 transition-colors text-sm cursor-pointer"
+          title="Toggle light/dark theme"
+          aria-label="Toggle light/dark theme"
+        >
+          ◐
+        </button>
+      </footer>
     </div>
   );
 }
