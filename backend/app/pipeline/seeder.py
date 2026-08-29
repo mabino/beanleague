@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, date
 from .api_client import ApiFootballClient
+from .coordinator import IngestCoordinator
 from .mock_data import MOCK_LEAGUES, MOCK_PLAYERS, MOCK_FIXTURES
 from .scoring import run_scoring_engine
 from ..config import settings
@@ -34,38 +35,19 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
         )
     await db.commit()
 
-    # 2. Check if we should fetch from API-Football
+    # 2. Ingest Fixtures via Ranked IngestCoordinator
+    coordinator = IngestCoordinator()
     used_api = False
-    if settings.API_FOOTBALL_KEY and not force_mock:
-        # Check quota
-        used_today = await client.get_today_usage(db)
-        if used_today < settings.API_DAILY_LIMIT:
-            logger.info("Fetching fixtures and players from external API-Football...")
-            today = date.today()
-            from datetime import timedelta
-            from_date = (today - timedelta(days=3)).isoformat()
-            to_date = (today + timedelta(days=4)).isoformat()
+    sources_used = []
 
-            # Helper to parse and insert fixture records
-            async def insert_fixture_items(items):
-                nonlocal used_api
-                if not items:
-                    return
+    if not force_mock:
+        logger.info("Ingesting fixtures via multi-source ranked IngestCoordinator...")
+        for league_id in settings.TARGET_LEAGUE_IDS:
+            fixtures, source = await coordinator.fetch_fixtures(league_id, settings.TARGET_SEASON)
+            if fixtures:
                 used_api = True
-                for item in items:
-                    fix = item.get("fixture", {})
-                    teams = item.get("teams", {})
-                    goals = item.get("goals", {})
-                    lg = item.get("league", {})
-                    
-                    status_short = fix.get("status", {}).get("short", "NS")
-                    if status_short in ("1H", "2H", "HT", "ET", "P", "LIVE"):
-                        mapped_status = "In-Play"
-                    elif status_short in ("FT", "AET", "PEN"):
-                        mapped_status = "Finished"
-                    else:
-                        mapped_status = "Scheduled"
-
+                sources_used.append(f"{source} (League {league_id}: {len(fixtures)} matches)")
+                for f in fixtures:
                     await db.execute(
                         """
                         INSERT INTO fixtures (id, league_id, round, home_team_id, home_team_name, home_team_logo,
@@ -79,38 +61,27 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                             updated_at = CURRENT_TIMESTAMP
                         """,
                         (
-                            fix.get("id"),
-                            lg.get("id", league_id),
-                            lg.get("round", "Regular Season"),
-                            teams.get("home", {}).get("id", 0),
-                            teams.get("home", {}).get("name", "Home Team"),
-                            teams.get("home", {}).get("logo"),
-                            teams.get("away", {}).get("id", 0),
-                            teams.get("away", {}).get("name", "Away Team"),
-                            teams.get("away", {}).get("logo"),
-                            fix.get("date", today.isoformat()),
-                            mapped_status,
-                            goals.get("home", 0) or 0,
-                            goals.get("away", 0) or 0
+                            f.id,
+                            f.league_id,
+                            f.round,
+                            f.home_team_id,
+                            f.home_team_name,
+                            f.home_team_logo,
+                            f.away_team_id,
+                            f.away_team_name,
+                            f.away_team_logo,
+                            f.kickoff_time,
+                            f.status,
+                            f.home_score,
+                            f.away_score
                         )
                     )
                 await db.commit()
 
-            # Fetch fixtures for target leagues directly for the configured season
-            for league_id in settings.TARGET_LEAGUE_IDS:
-                await asyncio.sleep(1.2)
-                resp = await client.fetch(
-                    "fixtures",
-                    params={"league": league_id, "season": settings.TARGET_SEASON},
-                    db=db
-                )
-                items = resp.get("response", []) if resp else []
-                await insert_fixture_items(items)
-
-            # If real fixtures were fetched, remove mock placeholder fixtures
-            if used_api:
-                await db.execute("DELETE FROM fixtures WHERE id BETWEEN 1001 AND 1010")
-                await db.commit()
+        # If real fixtures were fetched, remove mock placeholder fixtures
+        if used_api:
+            await db.execute("DELETE FROM fixtures WHERE id BETWEEN 1001 AND 1010")
+            await db.commit()
 
             # Fetch live team squads from API-Football for real player directory
             TARGET_TEAMS = [
@@ -318,5 +289,5 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
     # Run scoring engine to sync all points
     await run_scoring_engine(db)
     
-    logger.info("Daily Seeder completed successfully.")
-    return {"status": "success", "used_api": used_api}
+    logger.info(f"Daily Seeder completed successfully. Sources used: {sources_used}")
+    return {"status": "success", "used_api": used_api, "sources_used": sources_used}

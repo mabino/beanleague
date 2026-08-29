@@ -11,10 +11,12 @@ class Settings:
     # Database
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(DATA_DIR / "beanleague.db"))
     
-    # API-Football
+    # External Sports Providers
     API_FOOTBALL_KEY: str = os.getenv("API_FOOTBALL_KEY", "")
     API_FOOTBALL_BASE_URL: str = os.getenv("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io")
     API_DAILY_LIMIT: int = int(os.getenv("API_DAILY_LIMIT", "100"))
+    FOOTBALL_DATA_KEY: str = os.getenv("FOOTBALL_DATA_KEY", "")
+    THESPORTSDB_KEY: str = os.getenv("THESPORTSDB_KEY", "3")
     
     # Default League Config
     DEFAULT_SEASON_CODE: str = os.getenv("DEFAULT_SEASON_CODE", "BARCA-2026")
