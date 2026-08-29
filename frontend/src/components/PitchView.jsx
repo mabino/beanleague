@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PlayerCard } from './PlayerCard';
-import { Shield, Sparkles, Users } from 'lucide-react';
+import { Shield, Sparkles, Users, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 
 const FORMATION_ROWS = {
   '4-3-3': { def: 4, mid: 3, fwd: 3 },
@@ -24,6 +24,8 @@ export const PitchView = ({
   onSelectSlot,
   isReadonly = false,
 }) => {
+  const [isBenchCollapsed, setIsBenchCollapsed] = useState(false);
+
   const formationConfig = FORMATION_ROWS[formation] || FORMATION_ROWS['4-3-3'];
 
   // Categorize starting players by position
@@ -46,17 +48,18 @@ export const PitchView = ({
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto px-1 sm:px-0">
       {/* Integrated Tactical Header / Formation Bar */}
-      <div className="w-full mb-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 sm:p-3 shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-0.5 no-scrollbar flex-1">
-          <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider pl-1 shrink-0">
-            Shape:
+      <div className="w-full mb-2 sm:mb-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-2 sm:p-2.5 shadow-lg backdrop-blur-md flex flex-wrap items-center justify-between gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-0.5 no-scrollbar flex-1">
+          <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider pl-1 shrink-0 flex items-center gap-1">
+            <Layers className="w-3 h-3 text-emerald-400" />
+            <span className="hidden xs:inline">Shape:</span>
           </span>
           {availableFormations.map((f) => (
             <button
               key={f}
               onClick={() => !isReadonly && onFormationChange && onFormationChange(f)}
               disabled={isReadonly}
-              className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-black transition-all whitespace-nowrap border shrink-0 ${
+              className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10px] sm:text-xs font-black transition-all whitespace-nowrap border shrink-0 ${
                 formation === f
                   ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/30 scale-105'
                   : isReadonly
@@ -69,30 +72,30 @@ export const PitchView = ({
           ))}
         </div>
 
-        <div className="text-[10px] sm:text-[11px] font-mono text-emerald-400/90 font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
-          {formationConfig.def} DEF • {formationConfig.mid} MID • {formationConfig.fwd} FWD
+        <div className="text-[9px] sm:text-[10px] font-mono text-emerald-400/90 font-bold px-1.5 sm:px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+          {formationConfig.def}D • {formationConfig.mid}M • {formationConfig.fwd}F
         </div>
       </div>
 
       {/* Soccer Pitch Container */}
-      <div className="relative w-full rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-slate-700/80 pitch-bg overflow-hidden shadow-2xl p-2 xs:p-3 sm:p-5 md:p-6 select-none">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-slate-700/80 pitch-bg overflow-hidden shadow-2xl p-1.5 xs:p-2 sm:p-4 md:p-6 select-none">
         {/* Visual Pitch Markings */}
         <div className="absolute inset-0 pointer-events-none opacity-40">
           {/* Halfway Line */}
           <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white -translate-y-1/2"></div>
           {/* Center Circle */}
           <div className="absolute top-1/2 left-1/2 w-20 sm:w-28 md:w-36 h-20 sm:h-28 md:h-36 rounded-full border-2 border-white -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full bg-white -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-white -translate-x-1/2 -translate-y-1/2"></div>
           {/* Top Penalty Box */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 sm:w-48 md:w-64 h-16 sm:h-20 md:h-28 border-b-2 border-x-2 border-white rounded-b-lg"></div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 sm:w-48 md:w-64 h-14 sm:h-20 md:h-28 border-b-2 border-x-2 border-white rounded-b-lg"></div>
           {/* Bottom Penalty Box */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 sm:w-48 md:w-64 h-16 sm:h-20 md:h-28 border-t-2 border-x-2 border-white rounded-t-lg"></div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 sm:w-48 md:w-64 h-14 sm:h-20 md:h-28 border-t-2 border-x-2 border-white rounded-t-lg"></div>
         </div>
 
         {/* Pitch Player Rows (FWD -> MID -> DEF -> GK) */}
-        <div className="relative z-10 flex flex-col justify-between h-[450px] xs:h-[490px] sm:h-[560px] md:h-[620px] py-1 sm:py-2">
+        <div className="relative z-10 flex flex-col justify-between h-[430px] xs:h-[470px] sm:h-[540px] md:h-[600px] py-1">
           {/* Forwards (Attackers) */}
-          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
+          <div className="flex justify-around items-center w-full px-0.5">
             {fwds.map((player, idx) => (
               <PlayerCard
                 key={player ? `fwd-${player.id || player.player_id}` : `fwd-empty-${idx}`}
@@ -114,7 +117,7 @@ export const PitchView = ({
           </div>
 
           {/* Midfielders */}
-          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
+          <div className="flex justify-around items-center w-full px-0.5">
             {mids.map((player, idx) => (
               <PlayerCard
                 key={player ? `mid-${player.id || player.player_id}` : `mid-empty-${idx}`}
@@ -136,7 +139,7 @@ export const PitchView = ({
           </div>
 
           {/* Defenders */}
-          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
+          <div className="flex justify-around items-center w-full px-0.5">
             {defs.map((player, idx) => (
               <PlayerCard
                 key={player ? `def-${player.id || player.player_id}` : `def-empty-${idx}`}
@@ -158,7 +161,7 @@ export const PitchView = ({
           </div>
 
           {/* Goalkeeper */}
-          <div className="flex justify-around items-center w-full px-0.5 sm:px-2">
+          <div className="flex justify-around items-center w-full px-0.5">
             {gks.map((player, idx) => (
               <PlayerCard
                 key={player ? `gk-${player.id || player.player_id}` : `gk-empty-${idx}`}
@@ -181,40 +184,58 @@ export const PitchView = ({
         </div>
       </div>
 
-      {/* Substitutes / Bench Section */}
-      <div className="w-full mt-3 sm:mt-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md">
-        <div className="flex items-center justify-between mb-2 sm:mb-3">
+      {/* Substitutes / Bench Section (Collapsible for screen space saving) */}
+      <div className="w-full mt-2.5 sm:mt-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 sm:p-3 shadow-xl backdrop-blur-md">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
             <h3 className="text-xs sm:text-sm font-bold text-slate-200 tracking-wide uppercase">
               Substitutes Bench ({benchPlayers.length}/4)
             </h3>
+            {isBenchCollapsed && (
+              <span className="text-[10px] text-slate-400 hidden xs:inline">
+                • {benchPlayers.map(p => p.short_name || p.name?.split(' ').pop()).join(', ') || 'Empty'}
+              </span>
+            )}
           </div>
-          <span className="text-[10px] sm:text-xs text-slate-400">
-            Auto-subs if starter plays 0m
-          </span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] sm:text-[10px] text-slate-500 hidden sm:inline">
+              Auto-subs if starter plays 0m
+            </span>
+            <button
+              onClick={() => setIsBenchCollapsed(!isBenchCollapsed)}
+              className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-slate-400 hover:text-white transition px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700"
+            >
+              <span>{isBenchCollapsed ? 'Expand' : 'Collapse'}</span>
+              {isBenchCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex justify-center items-center gap-1.5 xs:gap-2 sm:gap-4 md:gap-6 flex-wrap">
-          {benchSlots.map((player, idx) => (
-            <PlayerCard
-              key={player ? `bench-${player.id || player.player_id}` : `bench-empty-${idx}`}
-              player={player}
-              isCaptain={false}
-              isStarting={false}
-              compact={true}
-              onRemove={!isReadonly ? onRemovePlayer : undefined}
-              onOpenMedia={onOpenMedia}
-              onClick={() => {
-                if (player && onOpenMedia) {
-                  onOpenMedia(player);
-                } else if (!isReadonly && onSelectSlot) {
-                  onSelectSlot('BENCH', player);
-                }
-              }}
-            />
-          ))}
-        </div>
+        {/* Bench Cards (Visible when not collapsed) */}
+        {!isBenchCollapsed && (
+          <div className="flex justify-center items-center gap-1.5 xs:gap-2 sm:gap-4 md:gap-6 flex-wrap mt-2.5 pt-2.5 border-t border-slate-800/80 animate-fade-in">
+            {benchSlots.map((player, idx) => (
+              <PlayerCard
+                key={player ? `bench-${player.id || player.player_id}` : `bench-empty-${idx}`}
+                player={player}
+                isCaptain={false}
+                isStarting={false}
+                compact={true}
+                onRemove={!isReadonly ? onRemovePlayer : undefined}
+                onOpenMedia={onOpenMedia}
+                onClick={() => {
+                  if (player && onOpenMedia) {
+                    onOpenMedia(player);
+                  } else if (!isReadonly && onSelectSlot) {
+                    onSelectSlot('BENCH', player);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
