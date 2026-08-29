@@ -1,8 +1,10 @@
 import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from typing import List, Optional
 from ..database import get_db
 from ..models import PlayerResponse
+from ..pipeline.photo_scraper import resolve_player_photo
 
 router = APIRouter(prefix="/api/players", tags=["Players"])
 
@@ -92,3 +94,31 @@ async def get_player_details(player_id: int, db: aiosqlite.Connection = Depends(
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found.")
     return dict(row)
+
+@router.get("/{player_id}/photo")
+async def get_player_photo(player_id: int, db: aiosqlite.Connection = Depends(get_db)):
+    """
+    Serves a low-bandwidth, cached player profile picture.
+    Lazily resolves and optimizes from fair-use open repositories if not yet cached.
+    """
+    cursor = await db.execute("SELECT name, real_team_name, position, photo_url FROM players WHERE id = ?", (player_id,))
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found.")
+    
+    player = dict(row)
+    file_path = await resolve_player_photo(
+        player_id=player_id,
+        player_name=player["name"],
+        real_team_name=player["real_team_name"] or "",
+        position=player["position"] or "FWD",
+        existing_url=player["photo_url"],
+        db=db
+    )
+    
+    media_type = "image/webp" if str(file_path).endswith(".webp") else "image/svg+xml"
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=2592000"}
+    )

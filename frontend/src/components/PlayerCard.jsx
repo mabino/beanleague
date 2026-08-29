@@ -81,9 +81,20 @@ export const PlayerCard = ({
         </button>
       )}
 
-      {/* Jersey / Kit Avatar */}
-      <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br ${jerseyGradient} p-1 flex items-center justify-center shadow-inner border border-white/20 mb-1`}>
-        <div className="flex flex-col items-center justify-center text-center">
+      {/* Jersey / Photo Avatar */}
+      <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gradient-to-br ${jerseyGradient} p-0.5 flex items-center justify-center shadow-inner border border-white/20 mb-1`}>
+        <img
+          src={player.photo_url || `/beanleague/api/players/${player.id}/photo`}
+          alt={player.name}
+          loading="lazy"
+          className="w-full h-full object-cover rounded-full"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            const fallback = e.currentTarget.parentElement?.querySelector('.avatar-fallback');
+            if (fallback) fallback.style.display = 'flex';
+          }}
+        />
+        <div className="avatar-fallback hidden flex-col items-center justify-center text-center w-full h-full">
           <span className="text-[10px] font-bold tracking-tight opacity-75">
             {player.real_team_name?.slice(0, 3)?.toUpperCase() || 'FC'}
           </span>
@@ -93,7 +104,7 @@ export const PlayerCard = ({
         </div>
 
         {/* Live Score Floating Badge */}
-        <div className="absolute -bottom-1.5 -right-1.5 bg-slate-950/90 border border-emerald-400 text-emerald-400 font-extrabold text-[10px] sm:text-xs px-1 rounded-md shadow">
+        <div className="absolute -bottom-1 -right-1 bg-slate-950/90 border border-emerald-400 text-emerald-400 font-extrabold text-[9px] sm:text-[10px] px-1 rounded shadow z-10">
           {player.match_points ?? player.fantasy_points ?? 0} pts
         </div>
       </div>

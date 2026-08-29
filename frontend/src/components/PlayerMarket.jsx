@@ -143,8 +143,19 @@ export const PlayerMarket = ({
               >
                 {/* Player Info */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white text-xs border border-white/10 shadow-inner">
-                    {p.position}
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white text-xs border border-white/10 shadow-inner flex-shrink-0">
+                    <img
+                      src={p.photo_url || `/beanleague/api/players/${p.id}/photo`}
+                      alt={p.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fb = e.currentTarget.parentElement?.querySelector('.avatar-fb');
+                        if (fb) fb.style.display = 'block';
+                      }}
+                    />
+                    <span className="avatar-fb hidden">{p.position}</span>
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

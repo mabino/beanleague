@@ -8,7 +8,8 @@ DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 class Settings:
-    # Database
+    # Storage
+    DATA_DIR: Path = DATA_DIR
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(DATA_DIR / "beanleague.db"))
     
     # External Sports Providers

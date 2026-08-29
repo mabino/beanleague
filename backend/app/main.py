@@ -7,6 +7,7 @@ from .config import settings
 from .database import init_db, get_db
 from .pipeline.seeder import run_daily_seeder
 from .pipeline.scheduler import start_scheduler, shutdown_scheduler
+from .pipeline.photo_scraper import BackgroundPhotoWorker
 from .api import leagues, teams, players, fixtures, live, admin
 
 # Logging configuration
@@ -33,8 +34,9 @@ async def lifespan(app: FastAPI):
 
     asyncio.create_task(bg_seed())
 
-    # Start background scheduler
+    # Start background scheduler and photo worker
     start_scheduler()
+    BackgroundPhotoWorker.start()
     logger.info("BeanLeague Backend ready!")
     
     yield
@@ -42,6 +44,7 @@ async def lifespan(app: FastAPI):
     # --- Shutdown ---
     logger.info("Shutting down BeanLeague Backend...")
     shutdown_scheduler()
+    BackgroundPhotoWorker.stop()
 
 app = FastAPI(
     title="BeanLeague API",
