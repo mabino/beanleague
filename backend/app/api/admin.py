@@ -1,4 +1,5 @@
 import aiosqlite
+import logging
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any, Optional, List
@@ -9,6 +10,8 @@ from ..pipeline.seeder import run_daily_seeder
 from ..pipeline.poller import run_matchday_poller, simulate_live_tick
 from ..pipeline.scoring import run_scoring_engine
 from ..models import ApiUsageSummary
+
+logger = logging.getLogger("beanleague.admin")
 
 router = APIRouter(prefix="/api/admin", tags=["Admin & Pipeline"])
 
