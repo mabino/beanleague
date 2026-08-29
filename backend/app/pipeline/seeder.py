@@ -97,6 +97,7 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
 
             # Fetch fixtures for target leagues directly for the configured season
             for league_id in settings.TARGET_LEAGUE_IDS:
+                await asyncio.sleep(1.2)
                 resp = await client.fetch(
                     "fixtures",
                     params={"league": league_id, "season": settings.TARGET_SEASON},
@@ -144,53 +145,53 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                 STAR_PRICES[p["name"].lower().strip()] = p["current_price"]
                 STAR_PRICES[p["short_name"].lower().strip()] = p["current_price"]
 
-            for team in TARGET_TEAMS:
-                used_now = await client.get_today_usage(db)
-                if used_now >= settings.API_DAILY_LIMIT - 5:
-                    logger.warning("Approaching daily API limit; stopping squad ingestion.")
-                    break
+            # Fetch live team squads from API-Football only if player directory is not yet populated
+            cursor = await db.execute("SELECT COUNT(*) FROM players WHERE id >= 100")
+            real_player_count = (await cursor.fetchone())[0]
 
-                squad_resp = await client.fetch(
-                    "players/squads",
-                    params={"team": team["id"]},
-                    db=db
-                )
-                if squad_resp and "response" in squad_resp and squad_resp["response"]:
-                    used_api = True
-                    for team_data in squad_resp["response"]:
-                        team_name = team_data.get("team", {}).get("name", team["name"])
-                        team_id = team_data.get("team", {}).get("id", team["id"])
-                        for pl in team_data.get("players", []):
-                            pl_id = pl["id"]
-                            raw_pos = pl.get("position", "Midfielder")
-                            pos = POS_MAP.get(raw_pos, "MID")
-                            name = pl.get("name", "Unknown Player")
-                            parts = name.split()
-                            short_name = parts[-1] if len(parts) > 1 else name
+            if real_player_count < 50:
+                for team in TARGET_TEAMS:
+                    await asyncio.sleep(1.2) # Rate limit pacing (10 req/min Free tier limit)
+                    squad_resp = await client.fetch(
+                        "players/squads",
+                        params={"team": team["id"]},
+                        db=db
+                    )
+                    if squad_resp and squad_resp.get("response"):
+                        used_api = True
+                        for team_data in squad_resp["response"]:
+                            team_name = team_data.get("team", {}).get("name", team["name"])
+                            team_id = team_data.get("team", {}).get("id", team["id"])
+                            for pl in team_data.get("players", []):
+                                pl_id = pl["id"]
+                                raw_pos = pl.get("position", "Midfielder")
+                                pos = POS_MAP.get(raw_pos, "MID")
+                                name = pl.get("name", "Unknown Player")
+                                parts = name.split()
+                                short_name = parts[-1] if len(parts) > 1 else name
 
-                            # Check for star price by full name, short name, or fallback to position tier
-                            price = (
-                                STAR_PRICES.get(name.lower().strip())
-                                or STAR_PRICES.get(short_name.lower().strip())
-                                or BASE_PRICES.get(pos, 6.0)
-                            )
-                            photo = pl.get("photo") or f"https://media.api-sports.io/football/players/{pl_id}.png"
+                                price = (
+                                    STAR_PRICES.get(name.lower().strip())
+                                    or STAR_PRICES.get(short_name.lower().strip())
+                                    or BASE_PRICES.get(pos, 6.0)
+                                )
+                                photo = pl.get("photo") or f"https://media.api-sports.io/football/players/{pl_id}.png"
 
-                            await db.execute(
-                                """
-                                INSERT INTO players (id, name, short_name, real_team_id, real_team_name, position, current_price, photo_url, status)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                ON CONFLICT(id) DO UPDATE SET
-                                    name = excluded.name,
-                                    short_name = excluded.short_name,
-                                    real_team_name = excluded.real_team_name,
-                                    position = excluded.position,
-                                    current_price = excluded.current_price,
-                                    photo_url = excluded.photo_url
-                                """,
-                                (pl_id, name, short_name, team_id, team_name, pos, price, photo, "Active")
-                            )
-                    await db.commit()
+                                await db.execute(
+                                    """
+                                    INSERT INTO players (id, name, short_name, real_team_id, real_team_name, position, current_price, photo_url, status)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    ON CONFLICT(id) DO UPDATE SET
+                                        name = excluded.name,
+                                        short_name = excluded.short_name,
+                                        real_team_name = excluded.real_team_name,
+                                        position = excluded.position,
+                                        current_price = excluded.current_price,
+                                        photo_url = excluded.photo_url
+                                    """,
+                                    (pl_id, name, short_name, team_id, team_name, pos, price, photo, "Active")
+                                )
+                        await db.commit()
 
             # Clean up dummy mock records (IDs < 100) that duplicate real API players
             await db.execute("""
