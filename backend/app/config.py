@@ -23,7 +23,7 @@ class Settings:
     
     # Target Leagues for Seeder (e.g., La Liga: 140, Premier League: 39)
     TARGET_LEAGUE_IDS: list[int] = [140, 39]
-    TARGET_SEASON: int = int(os.getenv("TARGET_SEASON", str(date.today().year)))
+    TARGET_SEASON: int = int(os.getenv("TARGET_SEASON", "2024"))
     
     # Scheduler
     POLL_INTERVAL_MINUTES: int = int(os.getenv("POLL_INTERVAL_MINUTES", "15"))
