@@ -1,7 +1,7 @@
 import aiosqlite
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from ..database import get_db
 from ..config import settings
 from ..pipeline.api_client import ApiFootballClient
@@ -95,7 +95,11 @@ async def reset_local_usage_log(db: aiosqlite.Connection = Depends(get_db)):
     return {"message": f"Local API usage counter for {today_str} reset to 0."}
 
 @router.get("/probe-fixtures")
-async def probe_fixtures(league: int = 39, season: int = 2024):
+async def probe_fixtures(
+    league: Optional[int] = 39,
+    season: Optional[int] = 2024,
+    date_str: Optional[str] = None
+):
     """Directly probes API-Football fixtures to inspect available match data."""
     if not settings.API_FOOTBALL_KEY:
         return {"error": "API_FOOTBALL_KEY not configured"}
@@ -104,10 +108,25 @@ async def probe_fixtures(league: int = 39, season: int = 2024):
         "x-apisports-key": settings.API_FOOTBALL_KEY,
         "x-rapidapi-key": settings.API_FOOTBALL_KEY,
     }
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    params = {}
+    if date_str:
+        params["date"] = date_str
+    else:
+        if league:
+            params["league"] = league
+        if season:
+            params["season"] = season
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.get(
             f"{settings.API_FOOTBALL_BASE_URL.rstrip('/')}/fixtures",
-            params={"league": league, "season": season, "last": 5},
+            params=params,
             headers=headers
         )
-        return resp.json()
+        data = resp.json()
+        items = data.get("response", [])
+        return {
+            "total_items": len(items),
+            "errors": data.get("errors"),
+            "sample": items[:3] if items else []
+        }

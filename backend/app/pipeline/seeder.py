@@ -104,23 +104,15 @@ async def run_daily_seeder(db: aiosqlite.Connection, force_mock: bool = False) -
                 )
                 items = resp.get("response", []) if resp else []
                 
-                # If no fixtures found in exact date window, fetch next and recent matches
+                # If no fixtures found in exact 7-day window, fetch full season fixtures (Free tier safe)
                 if not items:
-                    next_resp = await client.fetch(
+                    season_resp = await client.fetch(
                         "fixtures",
-                        params={"league": league_id, "next": 5},
+                        params={"league": league_id, "season": settings.TARGET_SEASON},
                         db=db
                     )
-                    if next_resp and next_resp.get("response"):
-                        items.extend(next_resp["response"])
-                        
-                    last_resp = await client.fetch(
-                        "fixtures",
-                        params={"league": league_id, "last": 5},
-                        db=db
-                    )
-                    if last_resp and last_resp.get("response"):
-                        items.extend(last_resp["response"])
+                    if season_resp and season_resp.get("response"):
+                        items = season_resp["response"]
 
                 await insert_fixture_items(items)
 
