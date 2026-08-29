@@ -1,5 +1,9 @@
 import pytest
-from backend.app.auth import generate_manager_code, normalize_pin
+
+try:
+    from backend.app.auth import generate_manager_code, normalize_pin
+except ImportError:
+    from app.auth import generate_manager_code, normalize_pin
 
 def test_generate_manager_code():
     code = generate_manager_code()

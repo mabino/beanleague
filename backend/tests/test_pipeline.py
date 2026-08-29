@@ -1,9 +1,16 @@
 import pytest
 from datetime import date
-from backend.app.pipeline.api_client import ApiFootballClient
-from backend.app.pipeline.seeder import run_daily_seeder
-from backend.app.pipeline.poller import run_matchday_poller, simulate_live_tick
-from backend.app.pipeline.scoring import run_scoring_engine
+
+try:
+    from backend.app.pipeline.api_client import ApiFootballClient
+    from backend.app.pipeline.seeder import run_daily_seeder
+    from backend.app.pipeline.poller import run_matchday_poller, simulate_live_tick
+    from backend.app.pipeline.scoring import run_scoring_engine
+except ImportError:
+    from app.pipeline.api_client import ApiFootballClient
+    from app.pipeline.seeder import run_daily_seeder
+    from app.pipeline.poller import run_matchday_poller, simulate_live_tick
+    from app.pipeline.scoring import run_scoring_engine
 
 @pytest.mark.asyncio
 async def test_api_rate_limiter(db_conn):

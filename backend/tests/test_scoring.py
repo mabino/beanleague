@@ -1,5 +1,9 @@
 import pytest
-from backend.app.rules import calculate_fantasy_points
+
+try:
+    from backend.app.rules import calculate_fantasy_points
+except ImportError:
+    from app.rules import calculate_fantasy_points
 
 def test_calculate_fantasy_points_forward():
     # Forward playing 90 mins, scoring 2 goals, 1 assist, 1 yellow card

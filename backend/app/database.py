@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS match_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fixture_id INTEGER NOT NULL,
     player_id INTEGER NOT NULL,
-    event_type TEXT NOT NULL CHECK(event_type IN ('goal', 'assist', 'yellow_card', 'red_card', 'save', 'penalty_save', 'own_goal', 'sub_in', 'sub_out', 'match_start', 'match_end')),
+    event_type TEXT NOT NULL CHECK(event_type IN ('goal', 'assist', 'clean_sheet', 'yellow_card', 'red_card', 'save', 'penalty_save', 'own_goal', 'sub_in', 'sub_out', 'match_start', 'match_end')),
     minute INTEGER NOT NULL,
     detail TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

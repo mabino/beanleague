@@ -1,5 +1,9 @@
 import pytest
-from backend.app.rules import validate_roster, FORMATIONS
+
+try:
+    from backend.app.rules import validate_roster, FORMATIONS
+except ImportError:
+    from app.rules import validate_roster, FORMATIONS
 
 def create_valid_squad_433():
     """Generates a valid 11-player 4-3-3 squad + 1 captain."""

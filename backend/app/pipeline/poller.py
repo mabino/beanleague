@@ -70,7 +70,7 @@ async def simulate_live_tick(db: aiosqlite.Connection) -> Dict[str, Any]:
     """
     Simulates a live match tick for demonstration / testing:
     - Randomly picks an In-Play match and a player.
-    - Generates a goal, assist, save, or card event.
+    - Generates a goal, assist, save, clean sheet, or card event.
     - Updates player_match_stats.
     - Triggers scoring engine and broadcasts SSE event with points delta.
     """
@@ -112,6 +112,7 @@ async def simulate_live_tick(db: aiosqlite.Connection) -> Dict[str, Any]:
     current_goals = stat_row["goals"] if stat_row else 0
     current_assists = stat_row["assists"] if stat_row else 0
     current_saves = stat_row["saves"] if stat_row else 0
+    current_clean_sheet = stat_row["clean_sheet"] if stat_row else 0
     current_yellows = stat_row["yellow_cards"] if stat_row else 0
     current_minutes = stat_row["minutes_played"] if stat_row else 75
 
@@ -128,6 +129,10 @@ async def simulate_live_tick(db: aiosqlite.Connection) -> Dict[str, Any]:
         current_assists += 1
         points_delta = 3
         detail_msg = f"👟 ASSIST! Brilliant pass by {p_name}! (+3 pts)"
+    elif chosen_event == "clean_sheet":
+        current_clean_sheet = 1
+        points_delta = 4 if p_pos in ("GK", "DEF") else 1
+        detail_msg = f"🛡️ CLEAN SHEET! Solid defense by {p_name}! (+{points_delta} pts)"
     elif chosen_event == "save":
         current_saves += 3
         points_delta = 1
@@ -139,16 +144,17 @@ async def simulate_live_tick(db: aiosqlite.Connection) -> Dict[str, Any]:
 
     await db.execute(
         """
-        INSERT INTO player_match_stats (player_id, fixture_id, minutes_played, goals, assists, saves, yellow_cards)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO player_match_stats (player_id, fixture_id, minutes_played, goals, assists, saves, clean_sheet, yellow_cards)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(player_id, fixture_id) DO UPDATE SET
             goals = excluded.goals,
             assists = excluded.assists,
             saves = excluded.saves,
+            clean_sheet = excluded.clean_sheet,
             yellow_cards = excluded.yellow_cards,
             updated_at = CURRENT_TIMESTAMP
         """,
-        (p_id, fix_id, current_minutes, current_goals, current_assists, current_saves, current_yellows)
+        (p_id, fix_id, current_minutes, current_goals, current_assists, current_saves, current_clean_sheet, current_yellows)
     )
 
     # Insert into match_events

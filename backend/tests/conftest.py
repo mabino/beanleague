@@ -1,10 +1,32 @@
 import os
+import sys
 import tempfile
+from pathlib import Path
+
+# Ensure backend and root directory are on sys.path regardless of execution CWD
+TESTS_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = TESTS_DIR.parent
+PROJECT_ROOT = BACKEND_DIR.parent
+
+for p in [str(PROJECT_ROOT), str(BACKEND_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import pytest
 import pytest_asyncio
 import aiosqlite
 from httpx import AsyncClient, ASGITransport
-from backend.app.config import settings
+
+try:
+    from backend.app.config import settings
+    from backend.app.main import app
+    from backend.app.database import init_db
+    from backend.app.pipeline.seeder import run_daily_seeder
+except ImportError:
+    from app.config import settings
+    from app.main import app
+    from app.database import init_db
+    from app.pipeline.seeder import run_daily_seeder
 
 # Override database path for tests before loading app
 temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
@@ -14,10 +36,6 @@ temp_db.close()
 settings.DATABASE_PATH = temp_db_path
 settings.API_DAILY_LIMIT = 100
 settings.ENABLE_SCHEDULER = False
-
-from backend.app.main import app
-from backend.app.database import init_db
-from backend.app.pipeline.seeder import run_daily_seeder
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_test_db():
