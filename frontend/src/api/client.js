@@ -201,4 +201,58 @@ export const api = {
       headers: { "X-Admin-PIN": adminPin },
     });
   },
+
+  // Export & User Management
+  async adminExportUserData(adminPin) {
+    const url = `${getApiBase()}/api/admin/export`;
+    const res = await fetch(url, {
+      headers: { "X-Admin-PIN": adminPin },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.detail || "Export failed");
+    }
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    const disposition = res.headers.get("Content-Disposition");
+    let filename = `beanleague_export_${Date.now()}.json`;
+    if (disposition && disposition.includes("filename=")) {
+      filename = disposition.split("filename=")[1].replace(/["']/g, "");
+    }
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+    return { filename };
+  },
+
+  adminGetSeasons(adminPin) {
+    return this.request("/api/admin/seasons", {
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminDeleteTeam(adminPin, teamId) {
+    return this.request(`/api/admin/teams/${teamId}`, {
+      method: "DELETE",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminClearSeason(adminPin, seasonCode) {
+    return this.request(`/api/admin/seasons/${seasonCode}`, {
+      method: "DELETE",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
+
+  adminClearAllUsers(adminPin) {
+    return this.request("/api/admin/clear-all-users", {
+      method: "DELETE",
+      headers: { "X-Admin-PIN": adminPin },
+    });
+  },
 };
